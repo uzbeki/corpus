@@ -1,32 +1,57 @@
 {% extends 'base.html' %}
+{% block extra_head %}
+<script defer>
+    // JavaScript code
+    function highlightPhrase(e, phrase) {
+        // const textElement = document.getElementById("text");
+        // const text = textElement.innerHTML;
+        console.log(e);
+        const text = e.innerHTML;
+        const highlightedText = text.replace(new RegExp(phrase, "gi"), "<span class='highlight'>$&</span>");
+        e.innerHTML = highlightedText;
+    }
+    document.addEventListener("DOMContentLoaded", function() {
+        const elements = document.querySelectorAll("[data-hightlight]");
+        elements.forEach(function(e) {
+            highlightPhrase(e, e.dataset.hightlight);
+        });
+    });
+</script>
+<style>
+    .highlight {
+        background-color: hsl(60, 100%, 50%);
+        color: black;
+    }
+</style>
+{% endblock extra_head %}
 {% block main %}
-    <h1>Search Results for "{{ results.query }}"</h1>
-    <p>Total frequency: {{ results.total_frequency }}</p>
+<h1>Search Results for "{{ results.query }}"</h1>
+<p>Total frequency: {{ results.total_frequency }}</p>
 
-    {% if results %}
-        <ul>
-            {% for result in results.results %}
-                <li>
-                    <h2>{{ result.article.title }}</h2>
-                    {% if result.article.author %}
-                        <p>by {{ result.article.author }}</p>
-                    {% endif %}
-                    <p>Published in {{ result.article.newspaper.name }}</p>
-                    <p>Frequency: {{ result.frequency }}</p>
-                    {% comment %} <p>{{ result.article.content|truncatewords:30 }}</p> {% endcomment %}
-                    <ol>
-                        {% for location in result.locations %}
-                            <li>
-                                <code>{{ location.type }} 👉</code>
-                                <span>{{ location.context }}</span>
-                            </li>
-                        {% endfor %}
-                    </ol>
-                </li>
+{% if results %}
+<ul>
+    {% for result in results.results %}
+    <li>
+        <h2>{{ result.article.title }}</h2>
+        {% if result.article.author %}
+        <p>by {{ result.article.author }}</p>
+        {% endif %}
+        <p>Published in {{ result.article.newspaper.name }}</p>
+        <p>Frequency: {{ result.frequency }}</p>
+        {% comment %} <p>{{ result.article.content|truncatewords:30 }}</p> {% endcomment %}
+        <ol>
+            {% for location in result.locations %}
+            <li>
+                <code>{{ location.type }} 👉</code>
+                <span data-hightlight="{{results.query}}">{{ location.context }}</span>
+            </li>
             {% endfor %}
-        </ul>
-    {% else %}
-        <p>No results found.</p>
-    {% endif %}
+        </ol>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p>No results found.</p>
+{% endif %}
 
 {% endblock main %}

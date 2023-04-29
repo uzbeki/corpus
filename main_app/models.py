@@ -68,6 +68,7 @@ class ArticleManager(models.Manager):
         Returns:
             SearchResult: A dictionary of search results.
         """
+        query = query.strip()
         queryset = self.get_queryset().search(query)
 
         # total_frequency = sum([article.frequency(query) for article in queryset])
@@ -102,7 +103,6 @@ class Article(models.Model):
     author = models.CharField(max_length=100, null=True, blank=True)
     newspaper = models.ForeignKey(Newspaper, on_delete=models.CASCADE)
     content = models.TextField()
-    # English or Uzbek language choice
     language = models.PositiveSmallIntegerField(choices=((1, 'English'), (2, 'Uzbek')), default=2)
 
     objects = ArticleManager()
@@ -121,6 +121,8 @@ class Article(models.Model):
         return self.content.lower().count(word.lower())
         # freq = get_word_frequency(word, self.content)
         # return freq
+
+
 
 
 

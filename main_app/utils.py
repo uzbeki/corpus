@@ -1,9 +1,9 @@
 import nltk
 import string
-from django.db.models import Func
-from regex import W
-
-from main_app.types import Context, SearchResultItem
+from django.db.models import Func, Count, QuerySet
+from nltk.tokenize import RegexpTokenizer
+from main_app.counter import WordCounter
+from main_app.types import Context, FrequencyStats, SearchResultItem
 nltk.download('punkt')
 
 
@@ -76,3 +76,31 @@ def search_word(text:str, word:str, padding=5) -> SearchResultItem:
     # sort locations that exact matches come first
     results['locations'].sort(key=lambda x: x['type'], reverse=False)
     return results
+
+# class FrequencyStat(TypedDict):
+#     word: str
+#     count: int
+#     language: str
+
+# FrequencyStats= list[FrequencyStat]
+
+def frequency_stats(articles:QuerySet) -> FrequencyStats:
+    tokenizer = RegexpTokenizer(r'\w+')
+
+    frequency_count:FrequencyStats = []
+    # for article in articles:
+        # words = tokenizer.tokenize(article.content.lower())
+        # word_count = nltk.Counter(words)
+    word_count = WordCounter([article.content for article in articles])
+    # print(f"article: {article.title}, word_count: {word_count.total()}\n\n")
+    print(f"word_count: {word_count.total_words}\n\n", word_count.display_top_words())
+    # for word, count in word_count.items():
+    for word, count in word_count.word_freq.items():
+        frequency_count.append({
+            'word': word,
+            'count': count,
+            'language': "English"
+        })
+
+    frequency_count = sorted(frequency_count, key=lambda x: (-x['count'], x['language']))
+    return frequency_count

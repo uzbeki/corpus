@@ -1,7 +1,46 @@
 {% extends 'base.html' %}
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock extra_head %}
+
 {% block main %}
+    <section>
+    <h3>Stats</h3>
+    <p>Number of newspapers: {{ newspapers|length }}</p>
+    {% comment %} <h4>Word frequency by language</h4>
+    <ul>
+        {% for freq in word_frequency %}
+            <li><a href="{% url 'search' %}?q={{freq.word}}" rel="noopener noreferrer">{{ freq.word }}</a>: {{ freq.count }}</li>
+        {% endfor %}
+    </ul> {% endcomment %}
+    <!-- HTML template -->
+    <canvas id="word-frequency-chart"></canvas>
+    <script>
+    const url = "{% url 'word_frequency_data' %}"; // Replace with the URL of your Django view that returns the word frequency data
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            const ctx = document.getElementById("word-frequency-chart").getContext("2d");
+            const chart = new Chart(ctx, {
+                type: "bar",
+                data: {
+                    labels: data.map(item => item.word),
+                    datasets: [{
+                        label: "Top 20 words",
+                        data: data.map(item => item.count),
+                        backgroundColor: "rgba(255, 99, 132, 0.2)",
+                        borderColor: "rgba(255, 99, 132, 1)",
+                        borderWidth: 1
+                    }]
+                },
+                // options: {scales: {yAxes: [{ticks: {beginAtZero: true}}]}}
+            });
+        });
+    </script>
+
+    </section>
    {% for newspaper in newspapers %}
-    <div>
+   <div>
         <h2>{{ newspaper.name }}</h2>
         <p>{{ newspaper.published_year }}</p>
         <p>{{ newspaper.link }}</p>

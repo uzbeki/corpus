@@ -16,3 +16,10 @@ class SearchResult(TypedDict, Generic[T]):
     query: str
     results: List[SearchResultItem[T]]
     total_frequency: int
+
+class FrequencyStat(TypedDict):
+    word: str
+    count: int
+    language: str
+
+FrequencyStats= list[FrequencyStat]
