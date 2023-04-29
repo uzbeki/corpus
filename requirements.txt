@@ -2,3 +2,4 @@ Django>=4.2
 psycopg2>=2.9.6
 python-dotenv
 django-allauth
+nltk # Natural Language Toolkit

@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block main %}
+{% comment %} article detail page {% endcomment %}
+<article>
+    <h1>{{ article.title }}</h1>
+    <p>{{ article.author }}</p>
+    <p>{{ article.get_language_display }}</p>
+    <p>{{ article.newspaper.published_date|date }}</p>
+    <p>{{ article.content }}</p>
+</article>
+{% endblock main %}

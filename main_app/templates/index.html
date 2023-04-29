@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block main %}
+   {% for newspaper in newspapers %}
+    <div>
+        <h2>{{ newspaper.name }}</h2>
+        <p>{{ newspaper.published_year }}</p>
+        <p>{{ newspaper.link }}</p>
+        {% for article in newspaper.article_set.all %}
+            <div>
+                <h3><a href="{% url 'article_detail' article_id=article.id %}">{{ article.title }}</a></h3>
+                <p>{{ article.author }}</p>
+                <p>{{ article.get_language_display }}</p>
+            </div>
+        {% endfor %}
+    </div>
+   {% endfor %}
+{% endblock main %}
