@@ -39,10 +39,17 @@ def article_detail(request, article_id):
     # get article
     article = Article.objects.get(id=article_id)
     # render article detail
-    return render(request, "article_detail.html", {"article": article})
+    return render(request, "article_detail.html", {"article": article, "word_frequency": frequency_stats([article])})
 
 def word_frequency_data(request) -> JsonResponse:
     """
     return json object of word frequency data
     """
     return JsonResponse(frequency_stats(Article.objects.all())[:20], safe=False)
+
+
+def article_frequency(request, article_id) -> JsonResponse:
+    """
+    return json object of word frequency data
+    """
+    return JsonResponse(frequency_stats([Article.objects.get(id=article_id)])[:20], safe=False)
