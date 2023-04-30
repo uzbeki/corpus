@@ -93,7 +93,7 @@ def frequency_stats(articles:QuerySet) -> FrequencyStats:
         # word_count = nltk.Counter(words)
     word_count = WordCounter([article.content for article in articles])
     # print(f"article: {article.title}, word_count: {word_count.total()}\n\n")
-    print(f"word_count: {word_count.total_words}\n\n", word_count.display_top_words())
+    # print(f"word_count: {word_count.total_words}\n\n", word_count.display_top_words())
     # for word, count in word_count.items():
     for word, count in word_count.word_freq.items():
         frequency_count.append({

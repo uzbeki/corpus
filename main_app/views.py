@@ -25,10 +25,10 @@ def search(request:HttpRequest):
     Search view for searching articles
     """
     # get search query
-    print("GET ", request.GET)
     query = request.GET.get("q")
+    language = int(request.GET.get("language"))
     # get search results
-    results = Article.objects.search(query)
+    results = Article.objects.search(query, language)
     # render search results
     return render(request, "search.html", {"results": results})
 

@@ -29,6 +29,10 @@
 <header>
     <form class="form-inline my-2 my-lg-0" action="{% url 'search' %}" method="get">
         <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search" name="q" value="{{request.GET.q}}" pattern='[A-Za-z0-9 ]{1,}' title='Only letters and numbers are allowed.' required>
+        <select name="language" id="language" class="languageSelect" >
+            <option value="1" {% if request.GET.language == '1' %} selected {% endif %}>English</option>
+            <option value="2" {% if request.GET.language == '2' %} selected {% endif %}>Uzbek</option>
+        </select>
         <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
     </form>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">

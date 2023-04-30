@@ -32,7 +32,7 @@ class Newspaper(models.Model):
 
 class ArticleQuerySet(QuerySet):
     # def search(self, query: str) -> List[SearchResultItem]:
-    def search(self, query: str) -> QuerySet:
+    def search(self, query: str, language:int) -> QuerySet:
         """
         Search articles for the given query string and return a list of SearchResultItem objects,
         where each SearchResultItem object contains an article that matches the query along with
@@ -46,7 +46,7 @@ class ArticleQuerySet(QuerySet):
         """
         # queryset = self.filter(content__icontains=query)
         # return [SearchResultItem(article=article, frequency=article.frequency(query)) for article in queryset]
-        return self.filter(content__icontains=query)
+        return self.filter(content__icontains=query, language=language)
 
 
 class ArticleManager(models.Manager):
@@ -56,7 +56,7 @@ class ArticleManager(models.Manager):
         """
         return ArticleQuerySet(self.model, using=self._db)
 
-    def search(self, query: str) -> SearchResult:
+    def search(self, query: str, language:int) -> SearchResult:
         """
         Search articles for the given query string and return a dictionary of search results,
         where the dictionary contains the query string, a list of SearchResultItem objects,
@@ -69,7 +69,7 @@ class ArticleManager(models.Manager):
             SearchResult: A dictionary of search results.
         """
         query = query.strip()
-        queryset = self.get_queryset().search(query)
+        queryset = self.get_queryset().search(query, language)
 
         # total_frequency = sum([article.frequency(query) for article in queryset])
         # results = [SearchResultItem(article=article, frequency=article.frequency(query)) for article in queryset]
