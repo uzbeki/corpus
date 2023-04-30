@@ -45,7 +45,14 @@ def word_frequency_data(request) -> JsonResponse:
     """
     return json object of word frequency data
     """
-    return JsonResponse(frequency_stats(Article.objects.all())[:20], safe=False)
+    english = Article.objects.filter(language=Article.ENGLISH)
+    uzbek = Article.objects.filter(language=Article.UZBEK)
+    return JsonResponse({
+        "english": frequency_stats(english)[:20],
+        "uzbek": frequency_stats(uzbek)[:20],
+    }, safe=False)
+
+    # return JsonResponse(frequency_stats(Article.objects.all())[:20], safe=False)
 
 
 def article_frequency(request, article_id) -> JsonResponse:

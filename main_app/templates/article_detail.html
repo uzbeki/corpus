@@ -30,7 +30,9 @@
             {% endfor %}
         </tbody>
     </table> {% endcomment %}
-    <canvas id="word-frequency-chart"></canvas>
+    <div id="chartBox">
+        <canvas id="word-frequency-chart"></canvas>
+    </div>
     <script>
     const url = "{% url 'article_frequency' article_id=article.id %}"; // Replace with the URL of your Django view that returns the word frequency data
     fetch(url)
@@ -49,7 +51,11 @@
                         borderWidth: 1
                     }]
                 },
-                // options: {scales: {yAxes: [{ticks: {beginAtZero: true}}]}}
+                options: {
+                    scales: {
+                        y: {beginAtZero: true}
+                    }
+                }
             });
         });
     </script>

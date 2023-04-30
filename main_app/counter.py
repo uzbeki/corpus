@@ -22,16 +22,11 @@ class WordCounter:
         self._count_words()
 
     def _count_words(self):
-        # with open(self.file_path, 'r') as f:
-        #     for word in f.read().split():
-        #         word = cleanse_word(word)
-        #         self.word_freq.setdefault(word, 0)
-        #         self.word_freq[word] += 1
-        #         self.total_words += 1
-        #         self._insert_to_top(word)
         for content in self.list_of_contents:
             for word in content.split():
                 word = cleanse_word(word)
+                if not word:
+                    continue
                 self.word_freq.setdefault(word, 0)
                 self.word_freq[word] += 1
                 self.total_words += 1

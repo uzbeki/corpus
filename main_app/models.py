@@ -98,14 +98,18 @@ class Article(models.Model):
         - newspaper name
         - text content max of 505 words, min 495
     """
+    ENGLISH = 1
+    UZBEK = 2
 
     title = models.CharField(max_length=100)
     author = models.CharField(max_length=100, null=True, blank=True)
     newspaper = models.ForeignKey(Newspaper, on_delete=models.CASCADE)
     content = models.TextField()
-    language = models.PositiveSmallIntegerField(choices=((1, 'English'), (2, 'Uzbek')), default=2)
+    # language = models.PositiveSmallIntegerField(choices=((1, 'English'), (2, 'Uzbek')), default=2)
+    language = models.PositiveSmallIntegerField(choices=((ENGLISH, 'English'), (UZBEK, 'Uzbek')), default=UZBEK)
 
     objects = ArticleManager()
+
     def __str__(self):
         return self.title
 

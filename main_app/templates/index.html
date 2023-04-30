@@ -1,6 +1,31 @@
 {% extends 'base.html' %}
 {% block extra_head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    #chartBox .chartLabels {
+        display: flex;
+        justify-content: space-around;
+        margin-bottom: 20px;
+        gap: 20px;
+    }
+    #chartBox .chartLabels .radioButton input {
+        display: none;
+    }
+    #chartBox .chartLabels .radioButton label {
+        display: block;
+        padding: 5px 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease-in-out;
+    }
+    #chartBox .chartLabels .radioButton input:checked + label {
+        background-color: #ccc;
+    }
+    #chartBox .chartLabels .radioButton label:active {
+        background-color: #ccc;
+    }
+</style>
 {% endblock extra_head %}
 
 {% block main %}
@@ -14,27 +39,80 @@
         {% endfor %}
     </ul> {% endcomment %}
     <!-- HTML template -->
-    <canvas id="word-frequency-chart"></canvas>
+    <div id="chartBox">
+        <div class="chartLabels">
+            <div class="radioButton">
+                <input type="radio" id="english" name="language" value="english" checked>
+                <label for="english">English</label>
+            </div>
+            <div class="radioButton">
+                <input type="radio" id="uzbek" name="language" value="uzbek">
+                <label for="uzbek">Uzbek</label>
+            </div>
+        </div>
+        <canvas id="word-frequency-chart"></canvas>
+    </div>
     <script>
     const url = "{% url 'word_frequency_data' %}"; // Replace with the URL of your Django view that returns the word frequency data
     fetch(url)
         .then(response => response.json())
         .then(data => {
+            console.log(data);
             const ctx = document.getElementById("word-frequency-chart").getContext("2d");
             const chart = new Chart(ctx, {
                 type: "bar",
                 data: {
-                    labels: data.map(item => item.word),
-                    datasets: [{
-                        label: "Top 20 words",
-                        data: data.map(item => item.count),
-                        backgroundColor: "rgba(255, 99, 132, 0.2)",
-                        borderColor: "rgba(255, 99, 132, 1)",
-                        borderWidth: 1
-                    }]
+                    labels: data['english'].map(item => item.word),
+                    datasets: [
+                        {
+                            label: "Frequency",
+                            data: data['english'].map(item => item.count),
+                            backgroundColor: "rgba(255, 99, 132, 0.2)",
+                            borderColor: "rgba(255, 99, 132, 1)",
+                            borderWidth: 1
+                        },
+                        {
+                            label: "Frequency",
+                            data: data['uzbek'].map(item => item.count),
+                            
+                            borderWidth: 1,
+                            hidden: true,
+                            backgroundColor: "rgba(54, 162, 235, 0.2)",
+                            borderColor: "rgba(54, 162, 235, 1)"
+                        },
+                    ]
                 },
-                // options: {scales: {yAxes: [{ticks: {beginAtZero: true}}]}}
+                options: {
+                    responsive: true, 
+                    scales: {y: {beginAtZero: true}},
+                    plugins: {legend: {display: false}}
+                }
             });
+
+            // toggle dataset 1 and dataset 2 on radio button change
+            const radioButtons = document.getElementsByName('language');
+            for (let i = 0; i < radioButtons.length; i++) {
+                radioButtons[i].addEventListener('change', function() {
+                    var dataset1 = chart.data.datasets[0];
+                    var dataset2 = chart.data.datasets[1];
+                
+                    if (this.value === 'english') {
+                        // dataset1.label = 'English';
+                        // dataset2.label = 'Uzbek';
+                        dataset1.hidden = false;
+                        dataset2.hidden = true;
+                        chart.data.labels = data['english'].map(item => item.word);
+                    } else if (this.value === 'uzbek') {
+                        // dataset1.label = 'Uzbek';
+                        // dataset2.label = 'English';
+                        dataset1.hidden = true;
+                        dataset2.hidden = false;
+                        chart.data.labels = data['uzbek'].map(item => item.word);
+                    }
+                
+                    chart.update();
+                });
+            }
         });
     </script>
 

@@ -85,7 +85,7 @@ def search_word(text:str, word:str, padding=5) -> SearchResultItem:
 # FrequencyStats= list[FrequencyStat]
 
 def frequency_stats(articles:QuerySet) -> FrequencyStats:
-    tokenizer = RegexpTokenizer(r'\w+')
+    # tokenizer = RegexpTokenizer(r'\w+')
 
     frequency_count:FrequencyStats = []
     # for article in articles:
@@ -99,8 +99,7 @@ def frequency_stats(articles:QuerySet) -> FrequencyStats:
         frequency_count.append({
             'word': word,
             'count': count,
-            'language': "English"
         })
 
-    frequency_count = sorted(frequency_count, key=lambda x: (-x['count'], x['language']))
+    frequency_count = sorted(frequency_count, key=lambda x: (-x['count']))
     return frequency_count
