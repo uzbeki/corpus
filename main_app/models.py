@@ -111,8 +111,8 @@ class Article(models.Model):
 
     def clean(self):
         super().clean()
-        max_word_count(self.content, 505)
-        min_word_count(self.content, 495)
+        max_word_count(self.content, 600)
+        min_word_count(self.content, 300)
     
     def frequency(self, word:str):
         """
