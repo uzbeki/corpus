@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% load static %}   
+{% block title %}
+<title>{{year}} archive</title>
+{% endblock title %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/year_archieve.css' %}">
+{% endblock extra_head %}
+
+{% block main %}
+<h1>Year Archive</h1>
+
+<section id='content'>
+    <div id="english" class="language-content">
+        <p>{{english_articles.count}} English articles</p>
+        {% for article in english_articles %}
+        <a href="{% url 'year_archive_download' year=year language=article.language %}">Download to CSV</a>
+        <ul>
+            {% for freq in english_frequency %}
+            <li>{{freq.count}}: {{freq.word}}</li>
+            {% endfor %}
+        </ul>
+        {% endfor %}
+    </div>
+    <div id="uzbek" class="language-content">
+        <p>{{uzbek_articles.count}} Uzbek articles</p>
+        {% for article in uzbek_articles %}
+        <a href="{% url 'year_archive_download' year=year language=article.language %}">Download to CSV</a>
+        <ul>
+            {% for freq in uzbek_frequency %}
+            <li>{{freq.count}}: {{freq.word}}</li>
+            {% endfor %}
+        </ul>
+        {% endfor %}
+    </div>
+</section>
+{% endblock main %}

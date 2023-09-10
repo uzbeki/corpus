@@ -1,31 +1,4 @@
 {% comment %} Navigation with search bar {% endcomment %}
-<style>
-    header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-    }
-    header nav {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 1rem;
-    }
-    header form {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 0.5rem;
-    }
-    header form input[type="search"] {
-        width: 10rem;
-        
-    }
-    header form button {
-    }
-    
-</style>
 <header>
     <form class="form-inline my-2 my-lg-0" action="{% url 'search' %}" method="get">
         <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search" name="q" value="{{request.GET.q}}" pattern='[A-Za-z0-9 ]{1,}' title='Only letters and numbers are allowed.' required>
@@ -33,6 +6,7 @@
             <option value="1" {% if request.GET.language == '1' %} selected {% endif %}>English</option>
             <option value="2" {% if request.GET.language == '2' %} selected {% endif %}>Uzbek</option>
         </select>
+        <input type="text" name="year" id="year" placeholder="year" pattern='[0-9]{4}' title='Only numbers are allowed.' value='{{request.GET.year}}' maxlength="4">
         <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
     </form>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">

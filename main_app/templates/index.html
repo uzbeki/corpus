@@ -25,6 +25,12 @@
     #chartBox .chartLabels .radioButton label:active {
         background-color: #ccc;
     }
+    #years div {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        justify-content: space-evenly;
+    }
 </style>
 {% endblock extra_head %}
 
@@ -50,6 +56,7 @@
                 <label for="uzbek">Uzbek</label>
             </div>
         </div>
+        <div id="download"><button type="button">Download full frequency data</button></div>
         <canvas id="word-frequency-chart"></canvas>
     </div>
     <script>
@@ -113,22 +120,57 @@
                     chart.update();
                 });
             }
-        });
+        }).then(()=>{
+            const fullDownloadBtn = document.querySelector("#download button");
+            // fetch and download full frequency data as csv
+            fullDownloadBtn.addEventListener('click', () => {
+                const checkedInput = document.querySelector('#chartBox input[name="language"]:checked');
+                const url = "{% url 'word_frequency_data' %}?full=1&language=" + checkedInput.value;
+                fetch(url)
+                    .then(response => response.blob())
+                    .then(blob => {
+                        if (!blob.size) return;
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.style.display = 'none';
+                        a.href = url;
+                        // the filename you want
+                        a.download = `word_frequency_${checkedInput.value}_${Date.now()}.csv`;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                    })
+                    .catch(() => alert('oh no!'));
+            });
+        })
     </script>
 
     </section>
    {% for newspaper in newspapers %}
    <div>
-        <h2>{{ newspaper.name }}</h2>
-        <p>{{ newspaper.published_year }}</p>
-        <p>{{ newspaper.link }}</p>
-        {% for article in newspaper.article_set.all %}
-            <div>
-                <h3><a href="{% url 'article_detail' article_id=article.id %}">{{ article.title }}</a></h3>
-                <p>{{ article.author }}</p>
-                <p>{{ article.get_language_display }}</p>
+    <a href="{% url 'newspaper_detail' newspaper_id=newspaper.id %}"><h2>{{ newspaper.title }}</h2></a>
+        {% comment %} <p>{{ newspaper.published_year }}</p> {% endcomment %}
+        <p>{{ newspaper.link|default_if_none:"" }}</p>
+        {% comment %} {% for article in newspaper.article_set.all %} {% endcomment %}
+        {% for article in newspaper.article_set.random3 %}
+        <div>
+            {% comment %} <h3><a href="{% url 'article_detail' article_id=article.id %}">{{ article.title }}</a></h3> {% endcomment %}
+            <a title="Go to full article page" href="{% url 'article_detail' article_id=article.pk %}" rel="noopener noreferrer"><h3>{{ article.title }} 🔗</h3></a>
+
+            <p>{{ article.author }}</p>
+            <p>{{ article.published_year|date:"Y" }}</p>
+            <p>{{ article.get_language_display }}</p>
             </div>
         {% endfor %}
     </div>
-   {% endfor %}
+
+    {% endfor %}
+    <div id="years">
+        <h2>Years</h2>
+        <div>
+            {% for year in published_years %}
+                <a href="{% url 'year_archive' year=year.year %}" class="year">{{year.year}}</a>
+            {% endfor %}
+        </div>
+    </div>
 {% endblock main %}

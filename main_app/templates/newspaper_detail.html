@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% block title %}
-<title>{{article.title}} | Corpus</title>
+<title>{{newspaper.title}} | Corpus</title>
 {% endblock title %}
 {% block extra_head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -9,11 +9,10 @@
 {% block main %}
 {% comment %} article detail page {% endcomment %}
 <article>
-    <h1>{{ article.title }}</h1>
-    <p>{{ article.author }}</p>
-    <p>{{ article.get_language_display }}</p>
-    <p>{{ article.published_year.year }}</p>
-    <p>{{ article.content|linebreaks }}</p>
+    <h1>{{ newspaper.title }}</h1>
+    <p>{{ newspaper.link|default_if_none:"" }}</p>
+    <p>{{ newspaper.issue_number|default_if_none:"" }}</p>
+    <p>{{newspaper.article_set.count}} articles</p>
 </article>
 <section>
     <h3>Word frequency</h3>
@@ -37,7 +36,7 @@
         <canvas id="word-frequency-chart"></canvas>
     </div>
     <script>
-    const url = "{% url 'article_frequency' article_id=article.id %}"; // Replace with the URL of your Django view that returns the word frequency data
+    const url = "{% url 'newspaper_frequency' newspaper_id=newspaper.id %}"; // Replace with the URL of your Django view that returns the word frequency data
     fetch(url)
         .then(response => response.json())
         .then(data => {
@@ -63,5 +62,18 @@
         });
     </script>
 
+</section>
+
+<section>
+    {% for article in newspaper.article_set.all %}
+    <div>
+        {% comment %} <h3><a href="{% url 'article_detail' article_id=article.id %}">{{ article.title }}</a></h3> {% endcomment %}
+        <a title="Go to full article page" href="{% url 'article_detail' article_id=article.pk %}" rel="noopener noreferrer"><h2>{{ article.title }} 🔗</h2></a>
+
+        <p>{{ article.author }}</p>
+        <p>{{ article.published_year|date:"Y" }}</p>
+        <p>{{ article.get_language_display }}</p>
+    </div>
+    {% endfor %}
 </section>
 {% endblock main %}

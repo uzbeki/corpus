@@ -35,13 +35,12 @@
 <ul>
     {% for result in results.results %}
     <li>
-        <h2>{{ result.article.title }}</h2>
+        <a title="Go to full article page" href="{% url 'article_detail' article_id=result.article.pk %}" target="_blank" rel="noopener noreferrer"><h2>{{ result.article.title }} 🔗</h2></a>
         {% if result.article.author %}
-        <p>by {{ result.article.author }}</p>
+        <p>by {{ result.article.author }} in {{result.article.published_year.year}}</p>
         {% endif %}
-        <p>Published in {{ result.article.newspaper.name }}</p>
+        <p>Published in {{ result.article.newspaper.title }}</p>
         <p>Frequency: {{ result.frequency }}</p>
-        {% comment %} <p>{{ result.article.content|truncatewords:30 }}</p> {% endcomment %}
         <ol>
             {% for location in result.locations %}
             <li>

@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,17 +8,7 @@
     {% block title %}
     <title>Corpus</title>
     {% endblock title %}
-    <style>
-        #chartBox {
-            max-height: 500px;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        #chartBox canvas {
-            margin: 0 auto;
-            width: 100%;
-        }
-    </style>
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
     {% block extra_head %}{% endblock extra_head %}
 </head>
 <body>
