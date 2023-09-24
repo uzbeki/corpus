@@ -1,10 +1,9 @@
-
 #chartBox {
     width: 100%;
     margin: 0 auto;
 }
 
-article {
+h1 {
     text-align: center;
 }
 
@@ -23,19 +22,24 @@ article {
 }
 
 #articles li {
-    border: 1px solid #ddd; /* Add a thin border */
-    padding: 1.25rem; /* Add some padding for spacing */
-    border-radius: 0.25rem; /* Rounded corners */
+    border: 1px solid #ddd;
+    /* Add a thin border */
+    padding: 1.25rem;
+    /* Add some padding for spacing */
+    border-radius: 0.25rem;
+    /* Rounded corners */
 }
 
 #articles li h3 {
     margin: 0;
     padding: 0;
 }
+
 #articles li p,
 #articles li span {
     font-size: smaller;
 }
+
 #articles li h3 div {
     font-size: 0.5rem;
     padding: 0.25rem 0.5rem;
@@ -53,5 +57,5 @@ article {
     #articles li {
         padding: 0.75rem;
     }
-    
+
 }

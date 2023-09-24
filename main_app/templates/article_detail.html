@@ -8,14 +8,13 @@
 {% endblock extra_head %}
 
 {% block main %}
-{% comment %} article detail page {% endcomment %}
 <article>
     <h1>{{ article.title }}</h1>
     <div>
         <span><i> By {{ article.author|truncatewords:2 }}</i>, </span>
         <span>in <a href="{% url 'year_archive' year=article.published_year.year %}" class="year">{{article.published_year.year}}</a></span>
     </div>
-    <p>{{ article.content|linebreaks }}</p>
+    <div class="content">{{ article.content|linebreaks }}</div>
 </article>
 {% comment %} <pre>{{word_frequency}}</pre> {% endcomment %}
 <section class="banner">

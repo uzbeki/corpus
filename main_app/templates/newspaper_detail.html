@@ -8,12 +8,7 @@
 
 {% block main %}
 {% comment %} article detail page {% endcomment %}
-<article>
-    <h1>{{ newspaper.title }}</h1>
-    <p>{{ newspaper.link|default_if_none:"" }}</p>
-    <p>{{ newspaper.issue_number|default_if_none:"" }}</p>
-    {% comment %} <p>{{newspaper.article_set.count}} articles</p> {% endcomment %}
-</article>
+<h1>{{ newspaper.title }}</h1>
 <section class="banner">
     <div class="stats">
         <div class="stat">

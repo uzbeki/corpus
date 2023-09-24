@@ -1,57 +1,19 @@
-
-#chartBox {
-    width: 100%;
-    margin: 0 auto;
-}
-
 article {
-    text-align: center;
+    padding: 1rem;
 }
 
-#articles {
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 2.5rem;
-}
-
-#articles li:first-child {
-    grid-column: 1 / -1;
-}
-
-#articles li {
-    border: 1px solid #ddd; /* Add a thin border */
-    padding: 1.25rem; /* Add some padding for spacing */
-    border-radius: 0.25rem; /* Rounded corners */
-}
-
-#articles li h3 {
-    margin: 0;
-    padding: 0;
-}
-#articles li p,
-#articles li span {
-    font-size: smaller;
-}
-#articles li h3 div {
-    font-size: 0.5rem;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
-    display: inline-block;
-    margin-right: 1rem;
-    border: 1px solid #ccc;
+article .content {
+    text-align: start;
+    line-height: 1.75;
 }
 
 @media screen and (max-width: 768px) {
-    #articles {
-        gap: 1.25rem;
+    article {
+        padding: 1.5rem;
     }
 
-    #articles li {
-        padding: 0.75rem;
+    article .content {
+        text-align: justify;
+        line-height: 2rem;
     }
-    
 }
