@@ -1,10 +1,7 @@
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import render
-from django.core.files.uploadedfile import UploadedFile
-from urllib3 import HTTPResponse
 from main_app.models import Article, Newspaper, create_frequency_csv
-from main_app.types import FrequencyStats
-from main_app.utils import frequency_stats
+from main_app.utils import frequency_stats, word_count
 
 # from main_app.utils import frequency_stats as f
 
@@ -50,7 +47,7 @@ def article_detail(request, article_id):
     # get article
     article = Article.objects.get(id=article_id)
     # render article detail
-    return render(request, "article_detail.html", {"article": article, "word_frequency": frequency_stats([article])})
+    return render(request, "article_detail.html", {"article": article, "word_frequency": frequency_stats([article]), "word_count": word_count([article]).total_words})
 
 
 def word_frequency_data(request: HttpRequest) -> JsonResponse | HttpResponse:
@@ -154,6 +151,8 @@ def newspaper_detail(request, newspaper_id):
         "newspaper_detail.html",
         {
             "newspaper": newspaper,
+            "article_count": newspaper.article_set.count(),
+            "word_count": newspaper.article_set.count() * 500,
             "word_frequency": frequency_stats(newspaper.article_set.all()),
         },
     )

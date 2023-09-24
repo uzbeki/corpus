@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
-{% block title %}
-<title>{{newspaper.title}} | Corpus</title>
-{% endblock title %}
+{% load static humanize %}
+{% block title %}{{newspaper.title}}{% endblock title %}
 {% block extra_head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="{% static "css/newspaper_details.css" %}">
 {% endblock extra_head %}
 
 {% block main %}
@@ -12,26 +12,19 @@
     <h1>{{ newspaper.title }}</h1>
     <p>{{ newspaper.link|default_if_none:"" }}</p>
     <p>{{ newspaper.issue_number|default_if_none:"" }}</p>
-    <p>{{newspaper.article_set.count}} articles</p>
+    {% comment %} <p>{{newspaper.article_set.count}} articles</p> {% endcomment %}
 </article>
-<section>
-    <h3>Word frequency</h3>
-    {% comment %} <table>
-        <thead>
-            <tr>
-                <th>Word</th>
-                <th>Frequency</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for freq in word_frequency %}
-            <tr>
-                <td>{{ freq.word }}</td>
-                <td>{{ freq.count }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table> {% endcomment %}
+<section class="banner">
+    <div class="stats">
+        <div class="stat">
+            <h4>{{ article_count|intcomma }}</h4>
+            <p>Articles</p>
+        </div>
+        <div class="stat">
+            <h4>{{ word_count|intcomma }}</h4>
+            <p>Words</p>
+        </div>
+    </div>
     <div id="chartBox">
         <canvas id="word-frequency-chart"></canvas>
     </div>
@@ -64,16 +57,30 @@
 
 </section>
 
-<section>
+<ul id="articles">
     {% for article in newspaper.article_set.all %}
-    <div>
+    <li>
         {% comment %} <h3><a href="{% url 'article_detail' article_id=article.id %}">{{ article.title }}</a></h3> {% endcomment %}
-        <a title="Go to full article page" href="{% url 'article_detail' article_id=article.pk %}" rel="noopener noreferrer"><h2>{{ article.title }} 🔗</h2></a>
+        {% comment %} <a title="Go to full article page" href="{% url 'article_detail' article_id=article.pk %}" rel="noopener noreferrer"><h2>{{ article.title }} 🔗</h2></a>
 
         <p>{{ article.author }}</p>
         <p>{{ article.published_year|date:"Y" }}</p>
-        <p>{{ article.get_language_display }}</p>
-    </div>
+        <p>{{ article.get_language_display }}</p> {% endcomment %}
+
+        <h3>
+            <a title="Go to full article page" href="{% url 'article_detail' article_id=article.pk %}" rel="noopener noreferrer">{{ article.title }}</a>
+            <div>{{ article.get_language_display }}</div>
+        </h3>
+        {% if forloop.first %}
+        <p>{{ article.content|truncatewords:80 }}</p>
+        {% else %}
+        <p>{{ article.content|truncatewords:20 }}</p>
+        {% endif %}
+        <div>
+            <span><i> By {{ article.author|truncatewords:2 }}</i>, </span>
+            <span>in <a href="{% url 'year_archive' year=article.published_year.year %}" class="year">{{article.published_year.year}}</a></span>
+        </div>
+    </li>
     {% endfor %}
-</section>
+</ul>
 {% endblock main %}

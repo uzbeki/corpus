@@ -103,3 +103,8 @@ def frequency_stats(articles:QuerySet) -> FrequencyStats:
 
     frequency_count = sorted(frequency_count, key=lambda x: (-x['count']))
     return frequency_count
+
+
+def word_count(articles:QuerySet) -> WordCounter:
+    word_count = WordCounter([article.content for article in articles])
+    return word_count
