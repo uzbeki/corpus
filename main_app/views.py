@@ -17,6 +17,8 @@ def index(request):
     context = {
         "newspapers": Newspaper.objects.prefetch_related("article_set"),
         "word_frequency": frequency_stats(Article.objects.all()),
+        "article_count": Article.objects.count(),
+        "word_count": Article.objects.count() * 500,
         "published_years": Article.objects.values("published_year")
         .distinct()
         .order_by("published_year")

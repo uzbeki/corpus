@@ -1,0 +1,249 @@
+.banner {
+    position: relative;
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 1fr 3fr;
+    align-items: center;
+    margin: 2rem 0;
+}
+
+.banner .stats {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-evenly;
+    align-items: center;
+    gap: 2rem;
+    padding: 1rem;
+    background-color: #fff;
+    text-align: center;
+    /* height: calc(100% - 8rem); */
+}
+
+.banner h4 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.banner p {
+    margin: 0;
+    font-size: 1rem;
+}
+
+#chartBox {
+    width: 100%;
+    margin: 0 auto;
+}
+
+#chartBox canvas {
+    margin: 0 auto;
+    width: 100%;
+}
+
+#chartBox .chartLabels {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 1rem;
+    gap: 1.5rem;
+}
+
+#chartBox .chartLabels .radioButton input {
+    display: none;
+}
+
+#chartBox .chartLabels .radioButton label {
+    display: block;
+    padding: 5px 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease-in-out;
+    font-size: small;
+}
+
+#chartBox .chartLabels .radioButton input:checked + label {
+    background-color: #ccc;
+}
+
+#chartBox .chartLabels .radioButton label:active {
+    background-color: #ccc;
+}
+
+#download {
+    text-align: right;
+}
+
+#download button {
+    padding: 0.25rem .5rem;
+    border-radius: 0.5rem;
+    border: 1px solid #ccc;
+    background-color: #fff;
+    cursor: pointer;
+    transition: background-color 0.3s ease-in-out;
+}
+
+#years ul {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: space-evenly;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#years ul li {}
+
+.newspaper_title {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    text-align: center;
+}
+
+.featured {
+    position: relative;
+    display: grid;
+    /* Three columns */
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-column-gap: 32px;
+    border: 1px solid transparent;
+    border-top: 1px solid #DADCE0;
+    border-bottom: 1px solid #DADCE0;
+    overflow: hidden;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.featured:before,
+.featured:after {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    content: '';
+    width: calc(33.3% - 4px);
+}
+
+.featured:before {
+    left: 0;
+    border-right: 1px solid #DADCE0;
+}
+
+.featured:after {
+    right: 0;
+    border-left: 1px solid #DADCE0;
+}
+
+.featured li {
+    position: relative;
+    z-index: 2;
+    padding: 16px 0;
+    background-color: #fff;
+}
+
+.featured li:first-child {
+    grid-row: 1 / span 2;
+}
+
+.featured li:nth-child(2) {
+    grid-column: 2 / span 2;
+}
+
+.featured li:nth-child(3) {
+    grid-column: 2;
+}
+
+.featured li:nth-child(3):before,
+.featured li:nth-child(4):before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -16px;
+    right: -16px;
+    border-top: 1px solid #DADCE0;
+}
+
+.featured li .thumbnail {}
+
+.featured li .thumbnail img {
+    width: 100%;
+    object-fit: cover;
+    max-height: 10rem;
+}
+
+.featured li .content {}
+
+.featured li h3 {
+    margin: 0.5rem 0;
+}
+
+.featured li h3 div {
+    font-size: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    display: inline-block;
+    margin-right: 0.5rem;
+    border: 1px solid #ccc;
+}
+
+.featured li .content p {
+    margin: 0.2rem 0;
+}
+
+.featured li .content p,
+.featured li .content span {
+    font-size: small;
+}
+
+.featured li .content p:first-child {
+    font-size: 1rem;
+}
+
+@media screen and (max-width: 768px) {
+    .featured {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .featured li:first-child {
+        grid-row: auto;
+    }
+
+    .featured li:nth-child(2) {
+        grid-column: auto;
+
+    }
+
+    .featured li:nth-child(1) img,
+    .featured li:nth-child(2) img {
+        display: none;
+    }
+
+    .featured li:nth-child(3) {
+        grid-column: auto;
+    }
+
+    .featured li:nth-child(3):before,
+    .featured li:nth-child(4):before {
+        content: none;
+        position: relative;
+        top: 0;
+        left: 0;
+        right: unset;
+        border: none;
+        user-select: none;
+        pointer-events: none;
+    }
+}
+
+@media screen and (max-width: 600px) {
+    .banner {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .featured {
+        grid-template-columns: 1fr;
+    }
+}

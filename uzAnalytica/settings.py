@@ -49,11 +49,12 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.sites",
+    "django.contrib.humanize",
+    "main_app.apps.MainAppConfig",
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
     # "allauth.socialaccount.providers.telegram",
-    "main_app.apps.MainAppConfig",
     "accounts.apps.AccountsConfig",
 ]
 
@@ -77,7 +78,7 @@ ROOT_URLCONF = "uzAnalytica.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -146,7 +147,8 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = os.getenv("STATIC_ROOT")
- 
+STATICFILES_DIRS = [BASE_DIR / "static"]
+
 
 MEDIA_ROOT = os.getenv("MEDIA_ROOT")
 MEDIA_URL = os.getenv("MEDIA_URL")

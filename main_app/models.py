@@ -209,7 +209,7 @@ class ArticleManager(models.Manager):
         """
         Return 3 random newspapers
         """
-        return self.order_by("?")[:3]
+        return self.order_by("?")[:4]
 
     def year_list(self):
         """

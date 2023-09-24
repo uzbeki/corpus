@@ -11,23 +11,32 @@ header {
     justify-content: space-between;
     flex-wrap: wrap;
 }
+
 header nav {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
 }
+
 header form {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
+    margin: 0.2rem;
+    padding: 0;
+    width: fit-content;
 }
+
 header form input[type="search"] {
     width: 10rem;
-    
+
 }
-header form input, header form button, header form select {
+
+header form input,
+header form button,
+header form select {
     padding: 0.5rem;
     border-radius: 0.5rem;
     border: 1px solid #ccc;
@@ -37,7 +46,9 @@ header form #year {
     width: 5ch;
 }
 
-header form button {}
+header form button {
+    max-width: fit-content;
+}
 
 
 #chartBox {
@@ -49,4 +60,20 @@ header form button {}
 #chartBox canvas {
     margin: 0 auto;
     width: 100%;
+}
+
+/* https://youtube.com/shorts/nIJF_oYU_Po */
+/* h1:focus-within,
+h2:focus-within,
+h3:focus-within,
+h4:focus-within,
+h5:focus-within, */
+:focus-visible {
+    transition: outline-offset 75ms ease-out;
+    outline: 2px solid #1e88e5;
+    border-color: transparent;
+}
+
+:not(:active):focus-visible {
+    outline-offset: 0.2rem;
 }

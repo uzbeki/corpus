@@ -1,176 +1,167 @@
 {% extends 'base.html' %}
+{% load static humanize custom_tags %}
 {% block extra_head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<style>
-    #chartBox .chartLabels {
-        display: flex;
-        justify-content: space-around;
-        margin-bottom: 20px;
-        gap: 20px;
-    }
-    #chartBox .chartLabels .radioButton input {
-        display: none;
-    }
-    #chartBox .chartLabels .radioButton label {
-        display: block;
-        padding: 5px 10px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        cursor: pointer;
-        transition: background-color 0.3s ease-in-out;
-    }
-    #chartBox .chartLabels .radioButton input:checked + label {
-        background-color: #ccc;
-    }
-    #chartBox .chartLabels .radioButton label:active {
-        background-color: #ccc;
-    }
-    #years div {
-        display: flex;
-        gap: 1rem;
-        flex-wrap: wrap;
-        justify-content: space-evenly;
-    }
-</style>
+<link rel="stylesheet" href="{% static "css/index.css" %}">
 {% endblock extra_head %}
 
 {% block main %}
-    <section>
-    <h3>Stats</h3>
-    <p>Number of newspapers: {{ newspapers|length }}</p>
-    {% comment %} <h4>Word frequency by language</h4>
-    <ul>
-        {% for freq in word_frequency %}
-            <li><a href="{% url 'search' %}?q={{freq.word}}" rel="noopener noreferrer">{{ freq.word }}</a>: {{ freq.count }}</li>
-        {% endfor %}
-    </ul> {% endcomment %}
-    <!-- HTML template -->
-    <div id="chartBox">
-        <div class="chartLabels">
-            <div class="radioButton">
-                <input type="radio" id="english" name="language" value="english" checked>
-                <label for="english">English</label>
+    <section class="banner">
+        <div class="stats">
+            <div class="stat">
+                <h4>{{ newspapers|length }}</h4>
+                <p>Newspapers</p>
             </div>
-            <div class="radioButton">
-                <input type="radio" id="uzbek" name="language" value="uzbek">
-                <label for="uzbek">Uzbek</label>
+            <div class="stat">
+                <h4>{{ article_count|intcomma }}</h4>
+                <p>Articles</p>
+            </div>
+            <div class="stat">
+                <h4>{{ word_count|intcomma }}</h4>
+                <p>Words</p>
             </div>
         </div>
-        <div id="download"><button type="button">Download full frequency data</button></div>
-        <canvas id="word-frequency-chart"></canvas>
-    </div>
-    <script>
-    const url = "{% url 'word_frequency_data' %}"; // Replace with the URL of your Django view that returns the word frequency data
-    fetch(url)
-        .then(response => response.json())
-        .then(data => {
-            console.log(data);
-            const ctx = document.getElementById("word-frequency-chart").getContext("2d");
-            const chart = new Chart(ctx, {
-                type: "bar",
-                data: {
-                    labels: data['english'].map(item => item.word),
-                    datasets: [
-                        {
-                            label: "Frequency",
-                            data: data['english'].map(item => item.count),
-                            backgroundColor: "rgba(255, 99, 132, 0.2)",
-                            borderColor: "rgba(255, 99, 132, 1)",
-                            borderWidth: 1
-                        },
-                        {
-                            label: "Frequency",
-                            data: data['uzbek'].map(item => item.count),
-                            
-                            borderWidth: 1,
-                            hidden: true,
-                            backgroundColor: "rgba(54, 162, 235, 0.2)",
-                            borderColor: "rgba(54, 162, 235, 1)"
-                        },
-                    ]
-                },
-                options: {
-                    responsive: true, 
-                    scales: {y: {beginAtZero: true}},
-                    plugins: {legend: {display: false}}
-                }
-            });
-
-            // toggle dataset 1 and dataset 2 on radio button change
-            const radioButtons = document.getElementsByName('language');
-            for (let i = 0; i < radioButtons.length; i++) {
-                radioButtons[i].addEventListener('change', function() {
-                    var dataset1 = chart.data.datasets[0];
-                    var dataset2 = chart.data.datasets[1];
-                
-                    if (this.value === 'english') {
-                        // dataset1.label = 'English';
-                        // dataset2.label = 'Uzbek';
-                        dataset1.hidden = false;
-                        dataset2.hidden = true;
-                        chart.data.labels = data['english'].map(item => item.word);
-                    } else if (this.value === 'uzbek') {
-                        // dataset1.label = 'Uzbek';
-                        // dataset2.label = 'English';
-                        dataset1.hidden = true;
-                        dataset2.hidden = false;
-                        chart.data.labels = data['uzbek'].map(item => item.word);
+        <div id="chartBox">
+            <div class="chartLabels">
+                <div class="radioButton">
+                    <input type="radio" id="english" name="language" value="english" checked>
+                    <label for="english">English</label>
+                </div>
+                <div class="radioButton">
+                    <input type="radio" id="uzbek" name="language" value="uzbek">
+                    <label for="uzbek">Uzbek</label>
+                </div>
+            </div>
+            <canvas id="word-frequency-chart"></canvas>
+            <div id="download"><button type="button">download full frequency data</button></div>
+        </div>
+        <script>
+        const url = "{% url 'word_frequency_data' %}"; // Replace with the URL of your Django view that returns the word frequency data
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                const ctx = document.getElementById("word-frequency-chart").getContext("2d");
+                const chart = new Chart(ctx, {
+                    type: "bar",
+                    data: {
+                        labels: data['english'].map(item => item.word),
+                        datasets: [
+                            {
+                                label: "Frequency",
+                                data: data['english'].map(item => item.count),
+                                backgroundColor: "rgba(255, 99, 132, 0.2)",
+                                borderColor: "rgba(255, 99, 132, 1)",
+                                borderWidth: 1
+                            },
+                            {
+                                label: "Frequency",
+                                data: data['uzbek'].map(item => item.count),
+                                
+                                borderWidth: 1,
+                                hidden: true,
+                                backgroundColor: "rgba(54, 162, 235, 0.2)",
+                                borderColor: "rgba(54, 162, 235, 1)"
+                            },
+                        ]
+                    },
+                    options: {
+                        responsive: true, 
+                        scales: {y: {beginAtZero: true}},
+                        plugins: {legend: {display: false}}
                     }
-                
-                    chart.update();
                 });
-            }
-        }).then(()=>{
-            const fullDownloadBtn = document.querySelector("#download button");
-            // fetch and download full frequency data as csv
-            fullDownloadBtn.addEventListener('click', () => {
-                const checkedInput = document.querySelector('#chartBox input[name="language"]:checked');
-                const url = "{% url 'word_frequency_data' %}?full=1&language=" + checkedInput.value;
-                fetch(url)
-                    .then(response => response.blob())
-                    .then(blob => {
-                        if (!blob.size) return;
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.style.display = 'none';
-                        a.href = url;
-                        // the filename you want
-                        a.download = `word_frequency_${checkedInput.value}_${Date.now()}.csv`;
-                        document.body.appendChild(a);
-                        a.click();
-                        window.URL.revokeObjectURL(url);
-                    })
-                    .catch(() => alert('oh no!'));
-            });
-        })
-    </script>
+
+                // toggle dataset 1 and dataset 2 on radio button change
+                const radioButtons = document.getElementsByName('language');
+                for (let i = 0; i < radioButtons.length; i++) {
+                    radioButtons[i].addEventListener('change', function() {
+                        var dataset1 = chart.data.datasets[0];
+                        var dataset2 = chart.data.datasets[1];
+                    
+                        if (this.value === 'english') {
+                            // dataset1.label = 'English';
+                            // dataset2.label = 'Uzbek';
+                            dataset1.hidden = false;
+                            dataset2.hidden = true;
+                            chart.data.labels = data['english'].map(item => item.word);
+                        } else if (this.value === 'uzbek') {
+                            // dataset1.label = 'Uzbek';
+                            // dataset2.label = 'English';
+                            dataset1.hidden = true;
+                            dataset2.hidden = false;
+                            chart.data.labels = data['uzbek'].map(item => item.word);
+                        }
+                    
+                        chart.update();
+                    });
+                }
+            }).then(()=>{
+                const fullDownloadBtn = document.querySelector("#download button");
+                // fetch and download full frequency data as csv
+                fullDownloadBtn.addEventListener('click', () => {
+                    const checkedInput = document.querySelector('#chartBox input[name="language"]:checked');
+                    const url = "{% url 'word_frequency_data' %}?full=1&language=" + checkedInput.value;
+                    fetch(url)
+                        .then(response => response.blob())
+                        .then(blob => {
+                            if (!blob.size) return;
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.style.display = 'none';
+                            a.href = url;
+                            // the filename you want
+                            a.download = `word_frequency_${checkedInput.value}_${Date.now()}.csv`;
+                            document.body.appendChild(a);
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+                        })
+                        .catch(() => alert('oh no!'));
+                });
+            })
+        </script>
 
     </section>
    {% for newspaper in newspapers %}
    <div>
-    <a href="{% url 'newspaper_detail' newspaper_id=newspaper.id %}"><h2>{{ newspaper.title }}</h2></a>
-        {% comment %} <p>{{ newspaper.published_year }}</p> {% endcomment %}
-        <p>{{ newspaper.link|default_if_none:"" }}</p>
-        {% comment %} {% for article in newspaper.article_set.all %} {% endcomment %}
-        {% for article in newspaper.article_set.random3 %}
-        <div>
-            {% comment %} <h3><a href="{% url 'article_detail' article_id=article.id %}">{{ article.title }}</a></h3> {% endcomment %}
-            <a title="Go to full article page" href="{% url 'article_detail' article_id=article.pk %}" rel="noopener noreferrer"><h3>{{ article.title }} 🔗</h3></a>
-
-            <p>{{ article.author }}</p>
-            <p>{{ article.published_year|date:"Y" }}</p>
-            <p>{{ article.get_language_display }}</p>
-            </div>
-        {% endfor %}
+        <h2 class="newspaper_title"><a href="{% url 'newspaper_detail' newspaper_id=newspaper.id %}">{{ newspaper.title }}</a></h2>
+        <ul class="featured">
+            {% for article in newspaper.article_set.random3 %}
+            <li>
+                {% if forloop.first or forloop.counter == 2%}
+                <div class="thumbnail">
+                    {% with url="/images/article"|random_img %}
+                    <img src="{% static url %}" alt="{{article.title}}" >
+                    {% endwith %}
+                </div>
+                {% endif %}
+                <div class="content">
+                    <h3>
+                        <a title="Go to full article page" href="{% url 'article_detail' article_id=article.pk %}" rel="noopener noreferrer">{{ article.title }}</a>
+                        <div>{{ article.get_language_display }}</div>
+                    </h3>
+                    {% if forloop.first %}
+                    <p>{{ article.content|truncatewords:50 }}</p>
+                    {% else %}
+                    <p>{{ article.content|truncatewords:30 }}</p>
+                    {% endif %}
+                    <div>
+                        <span><i> By {{ article.author|truncatewords:2 }}</i>, </span>
+                        <span>in <a href="{% url 'year_archive' year=article.published_year.year %}" class="year">{{article.published_year.year}}</a></span>
+                    </div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
     </div>
 
     {% endfor %}
     <div id="years">
-        <h2>Years</h2>
-        <div>
+        <h2>Statistics by year</h2>
+        <ul>
             {% for year in published_years %}
-                <a href="{% url 'year_archive' year=year.year %}" class="year">{{year.year}}</a>
+                <li><a href="{% url 'year_archive' year=year.year %}" class="year">{{year.year}}</a></li>
             {% endfor %}
-        </div>
+        </ul>
     </div>
 {% endblock main %}
