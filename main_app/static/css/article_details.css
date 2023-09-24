@@ -2,6 +2,11 @@ article {
     padding: 1rem;
 }
 
+article .meta {
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
 article .content {
     text-align: start;
     line-height: 1.75;
@@ -16,4 +21,9 @@ article .content {
         text-align: justify;
         line-height: 2rem;
     }
+
+    article .meta {
+        text-align: right;
+    }
+    
 }

@@ -10,7 +10,7 @@
 {% block main %}
 <article>
     <h1>{{ article.title }}</h1>
-    <div>
+    <div class="meta">
         <span><i> By {{ article.author|truncatewords:2 }}</i>, </span>
         <span>in <a href="{% url 'year_archive' year=article.published_year.year %}" class="year">{{article.published_year.year}}</a></span>
     </div>
