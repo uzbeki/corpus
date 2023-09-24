@@ -123,7 +123,7 @@
 
     </section>
    {% for newspaper in newspapers %}
-   <div>
+   <div class="newspaper">
         <h2 class="newspaper_title"><a href="{% url 'newspaper_detail' newspaper_id=newspaper.id %}">{{ newspaper.title }}</a></h2>
         <ul class="featured">
             {% for article in newspaper.article_set.random3 %}

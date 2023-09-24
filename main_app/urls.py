@@ -15,4 +15,5 @@ urlpatterns = [
     path("year/<yyyy:year>/<str:language>/download", views.year_archive_download, name="year_archive_download"),
     path("newspaper/<int:newspaper_id>", views.newspaper_detail, name="newspaper_detail"),
     path("newspaper/<int:newspaper_id>/frequency_data", views.newspaper_frequency, name="newspaper_frequency"),
+    path("author", views.author, name="author"),
 ]

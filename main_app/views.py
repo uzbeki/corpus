@@ -1,4 +1,4 @@
-from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.http import HttpRequest, HttpResponse, JsonResponse, FileResponse
 from django.shortcuts import render
 from main_app.models import Article, Newspaper, create_frequency_csv
 from main_app.utils import frequency_stats, word_count
@@ -118,10 +118,12 @@ def year_archive(request, year: int):
         request,
         "year_archive.html",
         {
-            "english_articles": english,
+            "english_article_count": english.count(),
             "english_frequency": frequency_stats(english),
-            "uzbek_articles": uzbek,
+            "total_english_words": word_count(english).total_words,
+            "uzbek_article_count": uzbek.count(),
             "uzbek_frequency": frequency_stats(uzbek),
+            "total_uzbek_words": word_count(uzbek).total_words,
             "year": year,
         },
     )
@@ -168,3 +170,12 @@ def newspaper_frequency(request, newspaper_id) -> JsonResponse:
         ),
         safe=False,
     )
+
+
+def author(request):
+    """
+    Author view that returns pdf file
+    """
+    response = FileResponse(open("author.pdf", "rb"), content_type="application/pdf")
+    response["Content-Disposition"] = "attachment; filename=NozimjonAtaboyevCV.pdf"
+    return response

@@ -1,9 +1,32 @@
-#content {
-    display: flex;
-    justify-content: space-evenly;
-    flex-wrap: wrap;
-    gap: 1rem;
+main {
+    width: 100%;
+    margin: 2rem auto;
 }
+
+main h1 {
+    text-align: center;
+    margin: 1rem;
+}
+
+#content {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin: 1rem;
+}
+
+.stat h4 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.stat p {
+    margin: 0;
+    font-size: 1rem;
+}
+
 
 #content .language-content {
     margin: 1rem;
@@ -11,10 +34,35 @@
     border-radius: 1rem;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
     transition: all 0.3s ease-in-out;
-}   
-/* #content .language-content ul {
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
-    list-style: none;
-} */
+}
+
+#content .language-content ol {
+    padding-inline-start: 4rem;
+}
+
+#content .language-content h3 {
+    text-align: center;
+    margin: 1rem;
+}
+
+#content .language-content .download {
+    cursor: pointer;
+    text-align: right;
+    font-size: 1rem;
+}
+
+
+
+@media screen and (max-width: 768px) {
+    #content .language-content {
+        margin: 0;
+        padding: 1rem;
+        border-radius: 1rem;
+        box-shadow: 0 0 6px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease-in-out;
+    }
+
+    #content .language-content ol li{
+        padding: 0.5rem;
+    }
+}

@@ -1,38 +1,67 @@
 {% extends 'base.html' %}
-{% load static %}   
-{% block title %}
-<title>{{year}} archive</title>
-{% endblock title %}
+{% load static humanize %}   
+{% block title %}{{year}} statistics{% endblock title %}
 
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/year_archieve.css' %}">
 {% endblock extra_head %}
 
 {% block main %}
-<h1>Year Archive</h1>
+<h1>{{year}} statistics</h1>
 
 <section id='content'>
-    <div id="english" class="language-content">
-        <p>{{english_articles.count}} English articles</p>
-        {% for article in english_articles %}
-        <a href="{% url 'year_archive_download' year=year language=article.language %}">Download to CSV</a>
-        <ul>
+    <div class="language-content">
+        <div class="stats">
+            <div class="stat">
+                <h4>{{ english_article_count|intcomma }}</h4>
+                <p>English articles</p>
+            </div>
+            <div class="stat">
+                <h4>{{ total_english_words|intcomma }}</h4>
+                <p>Total English words</p>
+            </div>
+            <div class="stat">
+                <h4>{{ english_frequency|length|intcomma }}</h4>
+                <p>Unique English words</p>
+            </div>
+        </div>
+
+        <h3>English words' frequency data</h3>
+        <div class="download"><a href="{% url 'year_archive_download' year=year language=1 %}">download to CSV</a></div>
+        <ol>
             {% for freq in english_frequency %}
-            <li>{{freq.count}}: {{freq.word}}</li>
+            <li>
+                <a href="{% url 'search' %}?q={{freq.word}}&language=1" title="click to search for {{freq.word}}">{{freq.word}} ({{freq.count|intcomma}})</a>
+                {% comment %} {{freq.word}} ({{freq.count}}) {% endcomment %}
+            </li>
             {% endfor %}
-        </ul>
-        {% endfor %}
+        </ol>
     </div>
-    <div id="uzbek" class="language-content">
-        <p>{{uzbek_articles.count}} Uzbek articles</p>
-        {% for article in uzbek_articles %}
-        <a href="{% url 'year_archive_download' year=year language=article.language %}">Download to CSV</a>
-        <ul>
+    <div class="language-content">
+        <div class="stats">
+            <div class="stat">
+                <h4>{{ uzbek_article_count|intcomma }}</h4>
+                <p>Uzbek articles</p>
+            </div>
+            <div class="stat">
+                <h4>{{ total_uzbek_words|intcomma }}</h4>
+                <p>Total Uzbek words</p>
+            </div>
+            <div class="stat">
+                <h4>{{ uzbek_frequency|length|intcomma }}</h4>
+                <p>Unique Uzbek words</p>
+            </div>
+        </div>
+        <h3>Uzbek words' frequency data</h3>
+        <div class="download"><a href="{% url 'year_archive_download' year=year language=2 %}">download to CSV</a></div>
+        <ol>
             {% for freq in uzbek_frequency %}
-            <li>{{freq.count}}: {{freq.word}}</li>
+            <li>
+                <a href="{% url 'search' %}?q={{freq.word}}&language=2" title="click to search for {{freq.word}}">{{freq.word}} ({{freq.count|intcomma}})</a>
+                {% comment %} {{freq.word}} ({{freq.count|intcomma}}) {% endcomment %}
+            </li>
             {% endfor %}
-        </ul>
-        {% endfor %}
+        </ol>
     </div>
 </section>
 {% endblock main %}

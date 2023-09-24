@@ -59,7 +59,7 @@ header form button {
     margin: 2rem 0;
 }
 
-.banner .stats {
+.stats {
     display: flex;
     flex-wrap: wrap;
     justify-content: space-evenly;
@@ -115,4 +115,29 @@ h5:focus-within, */
 
 :not(:active):focus-visible {
     outline-offset: 0.2rem;
+}
+
+
+main {
+    position: relative;
+    width: max(90%, 800px);
+    margin: 0 auto;
+}
+
+
+footer {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    border-top: 1px solid #ccc;
+}
+
+footer p {
+    text-align: center;
+    margin: 0;
+    padding: 0;
+    color: #666;
+}
+footer p:first-child {
+    margin-top: 0.5rem;
+    font-size: larger;
 }
