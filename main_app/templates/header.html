@@ -6,6 +6,11 @@
             <option value="1" {% if request.GET.language == '1' %} selected {% endif %}>English</option>
             <option value="2" {% if request.GET.language == '2' %} selected {% endif %}>Uzbek</option>
         </select>
+        <select name="match_type" id="match_type" class="match_typeSelect" >
+            <option value="0" {% if request.GET.match_type == '0' %} selected {% endif %}>Both</option>
+            <option value="1" {% if request.GET.match_type == '1' %} selected {% endif %}>Exact</option>
+            <option value="2" {% if request.GET.match_type == '2' %} selected {% endif %}>Partial</option>
+        </select>
         <input type="text" name="year" id="year" placeholder="year" pattern='[0-9]{4}' title='Only numbers are allowed.' value='{{request.GET.year}}' maxlength="4">
         <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
     </form>

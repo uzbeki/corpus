@@ -1,7 +1,8 @@
 from django.http import HttpRequest, HttpResponse, JsonResponse, FileResponse
 from django.shortcuts import render
 from main_app.models import Article, Newspaper, create_frequency_csv
-from main_app.utils import frequency_stats, word_count
+from main_app.types import SearchResult
+from main_app.utils import filter_by_match_type, frequency_stats, word_count
 
 # from main_app.utils import frequency_stats as f
 
@@ -34,10 +35,16 @@ def search(request: HttpRequest):
     query = request.GET.get("q")
     language = int(request.GET.get("language"))
     year = request.GET.get("year") or None
+    match_type = int(request.GET.get("match_type") or 0)
+    print(f"match_type: {match_type}")
     # get search results
-    results = Article.objects.search(query, language, year)
+    results: SearchResult = Article.objects.search(query, language, year)
+    if match_type != 0:
+        results = filter_by_match_type(results, match_type)
     # render search results
-    return render(request, "search.html", {"results": results})
+    return render(
+        request, "search.html", {"results": results, "match_type": match_type}
+    )
 
 
 def article_detail(request, article_id):
@@ -47,7 +54,15 @@ def article_detail(request, article_id):
     # get article
     article = Article.objects.get(id=article_id)
     # render article detail
-    return render(request, "article_detail.html", {"article": article, "word_frequency": frequency_stats([article]), "word_count": word_count([article]).total_words})
+    return render(
+        request,
+        "article_detail.html",
+        {
+            "article": article,
+            "word_frequency": frequency_stats([article]),
+            "word_count": word_count([article]).total_words,
+        },
+    )
 
 
 def word_frequency_data(request: HttpRequest) -> JsonResponse | HttpResponse:
@@ -83,7 +98,9 @@ def article_frequency(request, article_id) -> JsonResponse:
     """
     return json object of word frequency data
     """
-    return JsonResponse(frequency_stats([Article.objects.get(id=article_id)])[:20], safe=False)
+    return JsonResponse(
+        frequency_stats([Article.objects.get(id=article_id)])[:20], safe=False
+    )
 
 
 def handle_csv_upload_view(request: HttpRequest):
@@ -110,8 +127,12 @@ def year_archive(request, year: int):
 
     # get english and uzbek articles separately
 
-    english = Article.objects.filter(language=Article.ENGLISH, published_year=f"{year}-01-01")
-    uzbek = Article.objects.filter(language=Article.UZBEK, published_year=f"{year}-01-01")
+    english = Article.objects.filter(
+        language=Article.ENGLISH, published_year=f"{year}-01-01"
+    )
+    uzbek = Article.objects.filter(
+        language=Article.UZBEK, published_year=f"{year}-01-01"
+    )
 
     # render year archive
     return render(
@@ -165,9 +186,7 @@ def newspaper_frequency(request, newspaper_id) -> JsonResponse:
     return json object of word frequency data
     """
     return JsonResponse(
-        frequency_stats(
-            Article.objects.filter(newspaper_id=newspaper_id)[:20]
-        ),
+        frequency_stats(Article.objects.filter(newspaper_id=newspaper_id)[:20]),
         safe=False,
     )
 

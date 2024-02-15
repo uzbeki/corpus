@@ -3,28 +3,32 @@ import string
 from django.db.models import Func, Count, QuerySet
 from nltk.tokenize import RegexpTokenizer
 from main_app.counter import WordCounter
-from main_app.types import Context, FrequencyStats, SearchResultItem
-nltk.download('punkt')
+from main_app.types import Context, FrequencyStats, SearchResult, SearchResultItem
+
+nltk.download("punkt")
 
 
-def get_frequency_distribution(text:str, raw=False):
+def get_frequency_distribution(text: str, raw=False):
     """
     Get overall frequency distribution of a given text
     """
     if raw:
-        fd = nltk.FreqDist(word.lower() for word in text.split() if word not in string.punctuation)
+        fd = nltk.FreqDist(
+            word.lower() for word in text.split() if word not in string.punctuation
+        )
         return fd
     else:
         words = nltk.word_tokenize(text)
 
         # Calculate the frequency distribution with words punctuation removed
-        freq_dist = nltk.FreqDist(word.lower() for word in words if word not in string.punctuation)
+        freq_dist = nltk.FreqDist(
+            word.lower() for word in words if word not in string.punctuation
+        )
         # freq_dist = nltk.FreqDist(word.lower() for word in nltk.word_tokenize(sent))
         return freq_dist
 
 
-
-def get_word_frequency(word:str, text:str):
+def get_word_frequency(word: str, text: str):
     """
     Get word frequency of the article
     """
@@ -32,10 +36,9 @@ def get_word_frequency(word:str, text:str):
     return freq_dist[word]
 
 
-
 class RegexpReplace(Func):
-    """ 
-    
+    """
+
     exaple RegexpReplace(
         'content',
         fr'((\S+\s+){{0,5}}\S*{substring}\S*(\s+\S+){{0,5}})',
@@ -43,24 +46,21 @@ class RegexpReplace(Func):
         'gi'  # 'gi' for case-insensitive matching
     )
     """
-    function = 'REGEXP_REPLACE' # The name of the function in the database
-    arity = 2 # The number of arguments the function takes
 
+    function = "REGEXP_REPLACE"  # The name of the function in the database
+    arity = 2  # The number of arguments the function takes
 
 
 from nltk.tokenize import word_tokenize
 from django.utils.html import strip_tags
 
-def search_word(text:str, word:str, padding=5) -> SearchResultItem:
+
+def search_word(text: str, word: str, padding=5) -> SearchResultItem:
     word = word.lower()
-    text = strip_tags(text) # remove HTML tags
+    text = strip_tags(text)  # remove HTML tags
     tokens = word_tokenize(text)
     count = 0
-    results = {
-        "article": None, # type: ignore
-        "frequency": 0,
-        "locations": []
-    }
+    results = {"article": None, "frequency": 0, "locations": []}  # type: ignore
     for i, token in enumerate(tokens):
         exact_match = token.lower() == word
         partial_match = word in token.lower()
@@ -68,14 +68,21 @@ def search_word(text:str, word:str, padding=5) -> SearchResultItem:
             count += 1
             start = max(0, i - padding)
             end = min(len(tokens), i + padding + 1)
-            context = ' '.join(tokens[start:end])
+            context = " ".join(tokens[start:end])
             # results['locations'].append((count, context, "exact" if exact_match else "partial"))
-            results['locations'].append(Context(count=count, context=context, type="exact" if exact_match else "partial"))
-    results['frequency'] = count
+            results["locations"].append(
+                Context(
+                    count=count,
+                    context=context,
+                    type="exact" if exact_match else "partial",
+                )
+            )
+    results["frequency"] = count
 
     # sort locations that exact matches come first
-    results['locations'].sort(key=lambda x: x['type'], reverse=False)
+    results["locations"].sort(key=lambda x: x["type"], reverse=False)
     return results
+
 
 # class FrequencyStat(TypedDict):
 #     word: str
@@ -84,27 +91,64 @@ def search_word(text:str, word:str, padding=5) -> SearchResultItem:
 
 # FrequencyStats= list[FrequencyStat]
 
-def frequency_stats(articles:QuerySet) -> FrequencyStats:
+
+def frequency_stats(articles: QuerySet) -> FrequencyStats:
     # tokenizer = RegexpTokenizer(r'\w+')
 
-    frequency_count:FrequencyStats = []
+    frequency_count: FrequencyStats = []
     # for article in articles:
-        # words = tokenizer.tokenize(article.content.lower())
-        # word_count = nltk.Counter(words)
+    # words = tokenizer.tokenize(article.content.lower())
+    # word_count = nltk.Counter(words)
     word_count = WordCounter([article.content for article in articles])
     # print(f"article: {article.title}, word_count: {word_count.total()}\n\n")
     # print(f"word_count: {word_count.total_words}\n\n", word_count.display_top_words())
     # for word, count in word_count.items():
     for word, count in word_count.word_freq.items():
-        frequency_count.append({
-            'word': word,
-            'count': count,
-        })
+        frequency_count.append(
+            {
+                "word": word,
+                "count": count,
+            }
+        )
 
-    frequency_count = sorted(frequency_count, key=lambda x: (-x['count']))
+    frequency_count = sorted(frequency_count, key=lambda x: (-x["count"]))
     return frequency_count
 
 
-def word_count(articles:QuerySet) -> WordCounter:
+def word_count(articles: QuerySet) -> WordCounter:
     word_count = WordCounter([article.content for article in articles])
     return word_count
+
+
+def filter_by_match_type(results: SearchResult, match_type: int) -> SearchResult:
+    """
+    Filter search results by match type
+    1: exact match, 2: partial match
+    return only exact matches if match_type is 1
+    if match_type is 2 return partial matches only
+    """
+    filtered_results: SearchResult = {"query": results["query"], "results": []}
+    for result in results["results"]:
+        if match_type == 1:
+            locations = [r for r in result["locations"] if r["type"] == "exact"]
+            if locations:
+                filtered_results["results"].append(
+                    {
+                        "article": result["article"],
+                        "frequency": len(locations),
+                        "locations": locations,
+                    }
+                )
+        elif match_type == 2:
+            locations = [r for r in result["locations"] if r["type"] == "partial"]
+            if locations:
+                filtered_results["results"].append(
+                    {
+                        "article": result["article"],
+                        "frequency": len(locations),
+                        "locations": locations,
+                    }
+                )
+
+    filtered_results["total_frequency"] = sum([r['frequency'] for r in filtered_results["results"]])
+    return filtered_results
