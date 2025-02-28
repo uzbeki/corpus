@@ -1,5 +1,5 @@
-Django>=4.2
-psycopg2>=2.9.6
+Django
+psycopg2-binary
 python-dotenv
 django-allauth
 nltk # Natural Language Toolkit
