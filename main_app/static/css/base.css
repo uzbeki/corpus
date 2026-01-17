@@ -176,3 +176,22 @@ footer p:first-child {
     margin-top: 0.5rem;
     font-size: larger;
 }
+
+.male-name,
+.female-name {
+    display: inline-block;
+    padding: 0 0.25em;
+    border-radius: 0.3em;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.male-name {
+    background: rgba(33, 150, 243, 0.18);
+    color: #0d47a1;
+}
+
+.female-name {
+    background: rgba(233, 30, 99, 0.16);
+    color: #880e4f;
+}

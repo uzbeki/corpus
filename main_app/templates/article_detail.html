@@ -14,47 +14,161 @@
         <span><i> By {{ article.author|truncatewords:2 }}</i>, </span>
         <span>in <a href="{% url 'year_archive' year=article.published_year.year %}" class="year">{{article.published_year.year}}</a></span>
     </div>
-    <div class="content">{{ article.content|linebreaks }}</div>
+    <div class="name-counts" id="gender-name-counts"></div>
+    <div class="content" data-gender-annotations data-gender-count-target="#gender-name-counts">{{ article.content|linebreaks }}</div>
 </article>
 {% comment %} <pre>{{word_frequency}}</pre> {% endcomment %}
 <section class="banner">
     <div class="stats">
         <div class="stat">
             <h4>{{ word_count|intcomma }}</h4>
-            <p>Total words</p>
+            <p>Total words (non-unique)</p>
         </div>
         <div class="stat">
             <h4>{{ word_frequency|length }}</h4>
-            <p>Unique Words</p>
+            <p>Unique words (types)</p>
+        </div>
+        <div class="stat">
+            <h4>{{ name_stats.counts.male|add:name_stats.counts.female }}</h4>
+            <p>Annotated names (non-unique)</p>
+        </div>
+        <div class="stat">
+            <h4>{{ text_stats.ttr|floatformat:3 }}</h4>
+            <p>TTR (unique / total)</p>
+        </div>
+        <div class="stat">
+            <h4>{{ text_stats.hapax_count|intcomma }}</h4>
+            <p>Hapax (appear once)</p>
         </div>
     </div>
     <div id="chartBox">
+        <div class="chartLabels">
+            <div class="toggleGroup" aria-label="Select metric for the chart">
+                <span class="toggleLabel">Dataset</span>
+                <div class="radioButton">
+                    <input type="radio" id="dataset-words" name="dataset" value="words" checked>
+                    <label for="dataset-words">Words</label>
+                </div>
+                <div class="radioButton">
+                    <input type="radio" id="dataset-names" name="dataset" value="names">
+                    <label for="dataset-names">Names</label>
+                </div>
+            </div>
+        </div>
         <canvas id="word-frequency-chart"></canvas>
     </div>
     <script>
-    const url = "{% url 'article_frequency' article_id=article.id %}"; // Replace with the URL of your Django view that returns the word frequency data
+    const url = "{% url 'article_frequency' article_id=article.id %}";
+    const ctx = document.getElementById("word-frequency-chart").getContext("2d");
+    const datasetRadios = document.getElementsByName('dataset');
+
+    let chart;
+    let chartData;
+    let currentMetric = 'words';
+
+    const tooltipCallback = (context) => {
+        const value = context.parsed.y;
+        const total = context.dataset.totalCount || 0;
+        const pct = total ? ((value / total) * 100).toFixed(2) : '0.00';
+        return `${context.label}: ${value} (${pct}%)`;
+    };
+
+    const chartOptions = (showLegend) => ({
+        responsive: true,
+        scales: { y: { beginAtZero: true } },
+        plugins: {
+            legend: { display: showLegend },
+            tooltip: {
+                callbacks: {
+                    label: tooltipCallback,
+                    footer: () => 'Top-slice total shown; full CSV has more.'
+                }
+            }
+        }
+    });
+
+    const buildChartConfig = (metric) => {
+        if (metric === 'words') {
+            const words = chartData.words || [];
+            const total = words.reduce((acc, cur) => acc + (cur.count || 0), 0);
+            return {
+                labels: words.map(item => item.word),
+                datasets: [
+                    {
+                        label: `Top ${words.length} words (total ${total})`,
+                        data: words.map(item => item.count),
+                        backgroundColor: "rgba(255, 99, 132, 0.2)",
+                        borderColor: "rgba(255, 99, 132, 1)",
+                        borderWidth: 1,
+                        totalCount: total,
+                    },
+                ],
+                legend: false,
+            };
+        }
+
+        if (metric === 'names') {
+            const names = (chartData.names && chartData.names.frequency) || [];
+            const counts = (chartData.names && chartData.names.counts) || {};
+            const labels = names.map(item => item.name);
+            const maleData = names.map(item => item.gender === 'male' ? item.count : 0);
+            const femaleData = names.map(item => item.gender === 'female' ? item.count : 0);
+            const maleTotal = counts.male ?? maleData.reduce((acc, cur) => acc + cur, 0);
+            const femaleTotal = counts.female ?? femaleData.reduce((acc, cur) => acc + cur, 0);
+
+            return {
+                labels,
+                datasets: [
+                    {
+                        label: `Male names (total ${maleTotal})`,
+                        data: maleData,
+                        backgroundColor: "rgba(75, 192, 192, 0.3)",
+                        borderColor: "rgba(75, 192, 192, 1)",
+                        borderWidth: 1,
+                        totalCount: maleTotal,
+                    },
+                    {
+                        label: `Female names (total ${femaleTotal})`,
+                        data: femaleData,
+                        backgroundColor: "rgba(153, 102, 255, 0.3)",
+                        borderColor: "rgba(153, 102, 255, 1)",
+                        borderWidth: 1,
+                        totalCount: femaleTotal,
+                    },
+                ],
+                legend: true,
+            };
+        }
+
+        return { labels: [], datasets: [], legend: false };
+    };
+
+    const updateChart = () => {
+        const config = buildChartConfig(currentMetric);
+        chart.data.labels = config.labels;
+        chart.data.datasets = config.datasets;
+        chart.options.plugins.legend.display = config.legend;
+        chart.update();
+    };
+
     fetch(url)
         .then(response => response.json())
         .then(data => {
-            const ctx = document.getElementById("word-frequency-chart").getContext("2d");
-            const chart = new Chart(ctx, {
+            chartData = data;
+            const initialConfig = buildChartConfig(currentMetric);
+            chart = new Chart(ctx, {
                 type: "bar",
-                data: {
-                    labels: data.map(item => item.word),
-                    datasets: [{
-                        label: "Top 20 words",
-                        data: data.map(item => item.count),
-                        backgroundColor: "rgba(255, 99, 132, 0.2)",
-                        borderColor: "rgba(255, 99, 132, 1)",
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    scales: {
-                        y: {beginAtZero: true}
-                    }
-                }
+                data: { labels: initialConfig.labels, datasets: initialConfig.datasets },
+                options: chartOptions(initialConfig.legend),
             });
+
+            datasetRadios.forEach(radio => radio.addEventListener('change', (event) => {
+                currentMetric = event.target.value;
+                updateChart();
+            }));
+        })
+        .catch(() => {
+            console.error('Failed to load chart data');
         });
     </script>
 

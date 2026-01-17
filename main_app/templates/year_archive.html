@@ -18,24 +18,52 @@
             </div>
             <div class="stat">
                 <h4>{{ total_english_words|intcomma }}</h4>
-                <p>Total English words</p>
+                <p>Total English words (non-unique)</p>
             </div>
             <div class="stat">
                 <h4>{{ english_frequency|length|intcomma }}</h4>
-                <p>Unique English words</p>
+                <p>Unique English words (types)</p>
+            </div>
+            <div class="stat">
+                <h4>{{ english_name_stats.counts.total|intcomma }}</h4>
+                <p>Annotated names (non-unique)</p>
+            </div>
+            <div class="stat">
+                <h4>{{ english_text_stats.ttr|floatformat:3 }}</h4>
+                <p>TTR (unique / total)</p>
+            </div>
+            <div class="stat">
+                <h4>{{ english_text_stats.hapax_count|intcomma }}</h4>
+                <p>Hapax (appear once)</p>
             </div>
         </div>
 
-        <h3>English words' frequency data</h3>
-        <div class="download"><a href="{% url 'year_archive_download' year=year language=1 %}">download to CSV</a></div>
-        <ol>
-            {% for freq in english_frequency %}
-            <li>
-                <a href="{% url 'search' %}?q={{freq.word}}&language=1" title="click to search for {{freq.word}}">{{freq.word}} ({{freq.count|intcomma}})</a>
-                {% comment %} {{freq.word}} ({{freq.count}}) {% endcomment %}
-            </li>
-            {% endfor %}
-        </ol>
+        <div class="lists-row">
+            <div class="list-col">
+                <h3>English words' frequency data</h3>
+                <div class="download"><a href="{% url 'year_archive_download' year=year language=1 %}">download to CSV</a></div>
+                <ol>
+                    {% for freq in english_frequency %}
+                    <li>
+                        <a href="{% url 'search' %}?q={{freq.word}}&language=1" title="click to search for {{freq.word}}">{{freq.word}} ({{freq.count|intcomma}})</a>
+                        {% comment %} {{freq.word}} ({{freq.count}}) {% endcomment %}
+                    </li>
+                    {% endfor %}
+                </ol>
+            </div>
+            <div class="list-col">
+                <h3>English annotated names</h3>
+                <ol>
+                    {% for item in english_name_stats.frequency %}
+                    <li>
+                        <a href="{% url 'search' %}?q={{ item.name }}&language=1" title="click to search for {{ item.name }}">{{ item.name }}</a> ({{ item.gender }}) — {{ item.count|intcomma }}
+                    </li>
+                    {% empty %}
+                    <li>No annotated names.</li>
+                    {% endfor %}
+                </ol>
+            </div>
+        </div>
     </div>
     <div class="language-content">
         <div class="stats">
@@ -45,23 +73,51 @@
             </div>
             <div class="stat">
                 <h4>{{ total_uzbek_words|intcomma }}</h4>
-                <p>Total Uzbek words</p>
+                <p>Total Uzbek words (non-unique)</p>
             </div>
             <div class="stat">
                 <h4>{{ uzbek_frequency|length|intcomma }}</h4>
-                <p>Unique Uzbek words</p>
+                <p>Unique Uzbek words (types)</p>
+            </div>
+            <div class="stat">
+                <h4>{{ uzbek_name_stats.counts.total|intcomma }}</h4>
+                <p>Annotated names (non-unique)</p>
+            </div>
+            <div class="stat">
+                <h4>{{ uzbek_text_stats.ttr|floatformat:3 }}</h4>
+                <p>TTR (unique / total)</p>
+            </div>
+            <div class="stat">
+                <h4>{{ uzbek_text_stats.hapax_count|intcomma }}</h4>
+                <p>Hapax (appear once)</p>
             </div>
         </div>
-        <h3>Uzbek words' frequency data</h3>
-        <div class="download"><a href="{% url 'year_archive_download' year=year language=2 %}">download to CSV</a></div>
-        <ol>
-            {% for freq in uzbek_frequency %}
-            <li>
-                <a href="{% url 'search' %}?q={{freq.word}}&language=2" title="click to search for {{freq.word}}">{{freq.word}} ({{freq.count|intcomma}})</a>
-                {% comment %} {{freq.word}} ({{freq.count|intcomma}}) {% endcomment %}
-            </li>
-            {% endfor %}
-        </ol>
+        <div class="lists-row">
+            <div class="list-col">
+                <h3>Uzbek words' frequency data</h3>
+                <div class="download"><a href="{% url 'year_archive_download' year=year language=2 %}">download to CSV</a></div>
+                <ol>
+                    {% for freq in uzbek_frequency %}
+                    <li>
+                        <a href="{% url 'search' %}?q={{freq.word}}&language=2" title="click to search for {{freq.word}}">{{freq.word}} ({{freq.count|intcomma}})</a>
+                        {% comment %} {{freq.word}} ({{freq.count|intcomma}}) {% endcomment %}
+                    </li>
+                    {% endfor %}
+                </ol>
+            </div>
+            <div class="list-col">
+                <h3>Uzbek annotated names</h3>
+                <ol>
+                    {% for item in uzbek_name_stats.frequency %}
+                    <li>
+                        <a href="{% url 'search' %}?q={{ item.name }}&language=2" title="click to search for {{ item.name }}">{{ item.name }}</a> ({{ item.gender }}) — {{ item.count|intcomma }}
+                    </li>
+                    {% empty %}
+                    <li>No annotated names.</li>
+                    {% endfor %}
+                </ol>
+            </div>
+        </div>
     </div>
 </section>
 {% endblock main %}

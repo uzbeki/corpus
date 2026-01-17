@@ -43,7 +43,7 @@
             {% for location in result.locations %}
             <li>
                 <code>{{ location.type }} 👉</code>
-                <span data-hightlight="{{results.query}}">{{ location.context }}</span>
+                <span data-hightlight="{{results.query}}" data-gender-annotations>{{ location.context }}</span>
             </li>
             {% endfor %}
         </ol>

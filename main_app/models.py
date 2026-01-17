@@ -1,17 +1,54 @@
-from io import TextIOWrapper
-from typing import List
-from django.db import models
-from django.http import HttpResponse
-from main_app.types import SearchResult, SearchResultItem
-from main_app.utils import RegexpReplace, frequency_stats, search_word
-from django.core.files.uploadedfile import UploadedFile
+from __future__ import annotations
 
-from main_app.validators import max_word_count, min_word_count
+import re
+from io import TextIOWrapper
+
+from django.core.files.uploadedfile import UploadedFile
+from django.db import models
 from django.db.models import Count
 from django.db.models.query import QuerySet
-from django.db.models import Func, IntegerField
-from django.db.models.functions import Replace
-from django.db.models import Count, Q, Sum, F
+from django.http import HttpResponse
+
+from main_app.types import SearchResult, SearchResultItem
+from main_app.utils import frequency_stats, search_word
+
+
+_MALE_NAME_ANNOTATION_RE = re.compile(r"\[(?P<name>[^\[\]]+?)\]")
+_FEMALE_NAME_ANNOTATION_RE = re.compile(r"\^\^(?P<name>.+?)\^\^", re.DOTALL)
+_APOSTROPHE_VARIANTS = ("'", "’", "ʼ", "‘", "′", "`")
+
+
+def _normalize_apostrophes(value: str) -> str:
+    """Normalize all apostrophe-like characters to a plain ASCII apostrophe."""
+
+    normalized = value
+    for ch in _APOSTROPHE_VARIANTS[1:]:  # skip the plain apostrophe at index 0
+        normalized = normalized.replace(ch, "'")
+    return normalized
+
+
+def _query_variants(query: str) -> set[str]:
+    """Return a set of query variants covering common apostrophe glyphs."""
+
+    if not query:
+        return set()
+
+    variants: set[str] = set()
+    # Start with normalized version
+    base = _normalize_apostrophes(query)
+    variants.add(base)
+    variants.add(query)
+
+    # Generate variants by swapping apostrophe glyphs
+    for src in _APOSTROPHE_VARIANTS:
+        if src not in query:
+            continue
+        for dst in _APOSTROPHE_VARIANTS:
+            if src == dst:
+                continue
+            variants.add(query.replace(src, dst))
+
+    return {v for v in variants if v}
 
 
 class Newspaper(models.Model):
@@ -35,7 +72,9 @@ class Newspaper(models.Model):
 
 class ArticleQuerySet(QuerySet):
     # def search(self, query: str) -> List[SearchResultItem]:
-    def search(self, query: str, language: int, year: str | None = None) -> QuerySet:
+    def search(
+        self, query: str, language: int, year: int | str | None = None
+    ) -> QuerySet[Article]:
         """
         Search articles for the given query string and return a list of SearchResultItem objects,
         where each SearchResultItem object contains an article that matches the query along with
@@ -47,21 +86,40 @@ class ArticleQuerySet(QuerySet):
         Returns:
             List[SearchResultItem]: A list of SearchResultItem objects.
         """
-        # queryset = self.filter(content__icontains=query)
-        # return [SearchResultItem(article=article, frequency=article.frequency(query)) for article in queryset]
-        if year is None:
-            return self.filter(content__icontains=query, language=language)
-        return self.filter(content__icontains=query, language=language, published_year__year=year)
+        query = (query or "").strip()
+        variants = _query_variants(query)
+
+        qs = self.filter(language=language)
+
+        if year is not None:
+            try:
+                year_int = int(year)
+                qs = qs.filter(published_year__year=year_int)
+            except (TypeError, ValueError):
+                pass
+
+        if not variants:
+            return qs.none()
+
+        from django.db.models import Q
+
+        q_obj = Q()
+        for v in variants:
+            q_obj |= Q(content__icontains=v)
+
+        return qs.filter(q_obj)
 
 
-class ArticleManager(models.Manager):
+class ArticleManager(models.Manager["Article"]):
     def get_queryset(self):
         """
         Return a custom ArticleQuerySet that includes the `search` method.
         """
         return ArticleQuerySet(self.model, using=self._db)
 
-    def search(self, query: str, language: int, year: str | None = None) -> SearchResult:
+    def search(
+        self, query: str, language: int, year: str | None = None
+    ) -> SearchResult:
         """
         Search articles for the given query string and return a dictionary of search results,
         where the dictionary contains the query string, a list of SearchResultItem objects,
@@ -73,7 +131,9 @@ class ArticleManager(models.Manager):
         Returns:
             SearchResult: A dictionary of search results.
         """
-        query = query.strip()
+        query = (query or "").strip()
+        if not query:
+            return SearchResult(query="", results=[], total_frequency=0)
         queryset = self.get_queryset().search(query, language, year)
 
         # total_frequency = sum([article.frequency(query) for article in queryset])
@@ -86,50 +146,19 @@ class ArticleManager(models.Manager):
         results = []
 
         for article in queryset:
-            search_result = search_word(article.content, query, padding=10)
+            search_result = search_word(article.content, _normalize_apostrophes(query), padding=10)
             results.append(
                 SearchResultItem(
-                    article=article, frequency=search_result["frequency"], locations=search_result["locations"]
+                    article=article,
+                    frequency=search_result["frequency"],
+                    locations=search_result["locations"],
                 )
             )
             total_frequency += search_result["frequency"]
         # sort results by exact or partial match
-        return SearchResult(query=query, results=results, total_frequency=total_frequency)
-
-    # def create_from_csv(self, csv_file):
-    #     """
-    #     Create articles from csv file
-    #     """
-    #     # read csv file
-    #     import csv
-
-    #     # print(csv_file)
-    #     reader = csv.DictReader(csv_file)
-    #     articles = []
-    #     # create articles
-    #     # print(reader[0])
-    #     # print(reader[1])
-    #     for row in reader:
-    #         # print(row)
-    #         try:
-    #             # newspaper, _ = Newspaper.objects.get_or_create(name=row["newspaper"], published_year=f"{row['published_year']}-01-01")
-    #             newspaper, _ = Newspaper.objects.get_or_create(title=row["newspaper"], published_year=f"2023-01-01")
-    #             articles.append(
-    #                 Article(
-    #                     title=row["title"],
-    #                     author=row["author"],
-    #                     newspaper=newspaper,
-    #                     content=row["content"],
-    #                     published_year=f"{row['published_year']}-01-01",
-    #                     language=1 if row["language"].capitalize() == "English" else 2,
-    #                     # issue_number=row["issue_number"],
-    #                 )
-    #             )
-    #         except Exception as e:
-    #             print(row)
-    #             print(e)
-    #             return []
-    #     return Article.objects.bulk_create(articles)
+        return SearchResult(
+            query=query, results=results, total_frequency=total_frequency
+        )
 
     def create_from_csv(self, csv_file: UploadedFile):
         """
@@ -137,10 +166,11 @@ class ArticleManager(models.Manager):
         """
         # read csv file
         import csv
+
         # Use a TextIOWrapper to handle newlines within cells
-        wrapper = TextIOWrapper(csv_file, encoding='utf-8-sig')
+        wrapper = TextIOWrapper(csv_file, encoding="utf-8-sig")
         csv_data = csv.DictReader(wrapper, delimiter=",")
-        
+
         articles = []
         for row in csv_data:
             # print(row,"\n")
@@ -162,7 +192,7 @@ class ArticleManager(models.Manager):
                 print(e)
                 return []
         return Article.objects.bulk_create(articles)
-        
+
     def to_csv(self) -> HttpResponse:
         """
         Return csv file of all articles
@@ -172,7 +202,17 @@ class ArticleManager(models.Manager):
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = 'attachment; filename="articles.csv"'
         writer = csv.writer(response)
-        writer.writerow(["title", "author", "newspaper", "content", "published_year", "language", "issue_number"])
+        writer.writerow(
+            [
+                "title",
+                "author",
+                "newspaper",
+                "content",
+                "published_year",
+                "language",
+                "issue_number",
+            ]
+        )
         for article in self.all():
             writer.writerow(
                 [
@@ -182,7 +222,7 @@ class ArticleManager(models.Manager):
                     article.content,
                     article.published_year,
                     article.language,
-                    article.issue_number,
+                    article.newspaper.issue_number,
                 ]
             )
         return response
@@ -205,17 +245,60 @@ class ArticleManager(models.Manager):
             writer.writerow([stat["count"], stat["word"]])
         return response
 
+    def total_name_counts(self) -> dict[str, int]:
+        """Aggregate annotated male/female name counts across all articles."""
+
+        male = 0
+        female = 0
+        for article in self.all():
+            counts = article.annotated_name_counts()
+            male += counts.get("male", 0)
+            female += counts.get("female", 0)
+
+        return {"male": male, "female": female, "total": male + female}
+
+    def annotated_name_stats(self, articles: QuerySet["Article"] | None = None) -> dict:
+        """Aggregate annotated name counts and frequency for given articles (defaults to all)."""
+
+        articles = articles if articles is not None else self.all()
+
+        counts = {"male": 0, "female": 0}
+        freq: dict[tuple[str, str], int] = {}
+
+        for article in articles:
+            names = article.annotated_names()
+            for n in names["male"]:
+                counts["male"] += 1
+                freq[("male", n)] = freq.get(("male", n), 0) + 1
+            for n in names["female"]:
+                counts["female"] += 1
+                freq[("female", n)] = freq.get(("female", n), 0) + 1
+
+        frequency = [
+            {"name": name, "gender": gender, "count": count}
+            for (gender, name), count in freq.items()
+        ]
+        frequency.sort(key=lambda x: (-x["count"], x["name"]))
+
+        counts["total"] = counts["male"] + counts["female"]
+
+        return {"counts": counts, "frequency": frequency}
+
     def random3(self):
         """
-        Return 3 random newspapers
+        Return 3 random articles
         """
-        return self.order_by("?")[:4]
+        return self.order_by("?")[:3]
 
     def year_list(self):
         """
-        Return 3 random newspapers
+        Return a list of years with counts
         """
-        return self.values("published_year").annotate(count=Count("published_year")).order_by("-published_year")
+        return (
+            self.values("published_year")
+            .annotate(count=Count("published_year"))
+            .order_by("-published_year")
+        )
 
 
 class Article(models.Model):
@@ -228,65 +311,70 @@ class Article(models.Model):
         - text content max of 505 words, min 495
     """
 
-    ENGLISH = 1
-    UZBEK = 2
+    class Language(models.IntegerChoices):
+        ENGLISH = 1, "English"
+        UZBEK = 2, "Uzbek"
+
+    ENGLISH = Language.ENGLISH
+    UZBEK = Language.UZBEK
 
     title = models.CharField(max_length=500)
     author = models.CharField(max_length=200, null=True, blank=True)
     newspaper = models.ForeignKey(Newspaper, on_delete=models.CASCADE)
     content = models.TextField()
-    language = models.PositiveSmallIntegerField(choices=((ENGLISH, "English"), (UZBEK, "Uzbek")), default=UZBEK)
+    language = models.PositiveSmallIntegerField(
+        choices=Language.choices, default=Language.UZBEK
+    )
     published_year = models.DateField(null=True, default=None)
-    issue_number = models.IntegerField(null=True, blank=True, default=None)
-    
-    word_count_total = models.IntegerField(null=True, blank=True, default=None)
-    word_count_unique = models.IntegerField(null=True, blank=True, default=None)
-    
+    link = models.URLField(null=True, blank=True, default=None)
+
     objects = ArticleManager()
 
     def __str__(self):
         return self.title
-
-    def save(self, *args, **kwargs):
-        # Calculate word_count_total
-        self.word_count_total = len(self.content.split())
-
-        # Calculate word_count_unique
-        unique_words = set(self.content.split())
-        self.word_count_unique = len(unique_words)
-
-        super(Article, self).save(*args, **kwargs)
 
     def frequency(self, word: str):
         """
         Get word frequency of the article
         """
         return self.content.lower().count(word.lower())
-        # freq = get_word_frequency(word, self.content)
-        # return freq
+
+    def annotated_names(self) -> dict[str, list[str]]:
+        """Extract annotated names from article content.
+
+        - Male names: `[Mr. Smith]` (square brackets)
+        - Female names: `^^Olivera Anna^^` (double carets)
+
+        Returns raw occurrences (not de-duplicated).
+        """
+
+        text = self.content or ""
+
+        male = [m.group("name").strip() for m in _MALE_NAME_ANNOTATION_RE.finditer(text)]
+        female = [m.group("name").strip() for m in _FEMALE_NAME_ANNOTATION_RE.finditer(text)]
+
+        male = [n for n in male if n]
+        female = [n for n in female if n]
+
+        return {"male": male, "female": female}
+
+    def annotated_name_counts(self) -> dict[str, int]:
+        """Return total counts of annotated male/female names."""
+
+        names = self.annotated_names()
+        return {"male": len(names["male"]), "female": len(names["female"])}
+
+    def annotated_unique_name_counts(self) -> dict[str, int]:
+        """Return unique counts of annotated male/female names."""
+
+        names = self.annotated_names()
+        return {
+            "male": len(set(names["male"])),
+            "female": len(set(names["female"])),
+        }
 
     class Meta:
         ordering = ["-published_year", "newspaper"]
-
-
-# class ArticleWordFrequency(models.Model):
-#     """
-#     DB model for storing article word frequency info:
-#     ArticleWordFrequency:
-#         - article
-#         - word
-#         - frequency
-#     """
-
-#     article = models.ForeignKey(Article, on_delete=models.CASCADE)
-#     word = models.CharField(max_length=100)
-#     frequency = models.IntegerField()
-
-#     def __str__(self):
-#         return self.word
-
-#     class Meta:
-#         unique_together = ('article', 'word', 'frequency')
 
 
 def create_frequency_csv(articles: QuerySet[Article], filename="frequency.csv"):

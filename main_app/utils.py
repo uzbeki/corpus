@@ -55,9 +55,13 @@ from nltk.tokenize import word_tokenize
 from django.utils.html import strip_tags
 
 
+_APOSTROPHE_TRANSLATION = str.maketrans({"’": "'", "ʼ": "'", "‘": "'", "′": "'", "`": "'"})
+
+
 def search_word(text: str, word: str, padding=5) -> SearchResultItem:
-    word = word.lower()
-    text = strip_tags(text)  # remove HTML tags
+    # Normalize apostrophes so `xo'jalik` matches text with `xo’jalik`.
+    word = (word or "").translate(_APOSTROPHE_TRANSLATION).lower()
+    text = strip_tags(text or "").translate(_APOSTROPHE_TRANSLATION)  # remove HTML tags and normalize
     tokens = word_tokenize(text)
     count = 0
     results = {"article": None, "frequency": 0, "locations": []}  # type: ignore
@@ -92,32 +96,61 @@ def search_word(text: str, word: str, padding=5) -> SearchResultItem:
 # FrequencyStats= list[FrequencyStat]
 
 
+def aggregate_word_stats(articles: QuerySet) -> dict:
+    """Single pass word stats over a queryset.
+
+    Returns:
+        {
+            "frequency": list[{"word", "count"}],
+            "total_words": int,
+            "unique_words": int,
+            "ttr": float,
+            "hapax_count": int,
+        }
+    """
+
+    wc = WordCounter([article.content for article in articles])
+
+    frequency: FrequencyStats = [
+        {"word": word, "count": count} for word, count in wc.word_freq.items()
+    ]
+    frequency.sort(key=lambda x: (-x["count"]))
+
+    unique_words = len(wc.word_freq)
+    hapax_count = sum(1 for c in wc.word_freq.values() if c == 1)
+    ttr = (unique_words / wc.total_words) if wc.total_words else 0
+
+    return {
+        "frequency": frequency,
+        "total_words": wc.total_words,
+        "unique_words": unique_words,
+        "ttr": ttr,
+        "hapax_count": hapax_count,
+    }
+
+
 def frequency_stats(articles: QuerySet) -> FrequencyStats:
-    # tokenizer = RegexpTokenizer(r'\w+')
+    """Backwards-compatible frequency helper using the aggregator."""
 
-    frequency_count: FrequencyStats = []
-    # for article in articles:
-    # words = tokenizer.tokenize(article.content.lower())
-    # word_count = nltk.Counter(words)
-    word_count = WordCounter([article.content for article in articles])
-    # print(f"article: {article.title}, word_count: {word_count.total()}\n\n")
-    # print(f"word_count: {word_count.total_words}\n\n", word_count.display_top_words())
-    # for word, count in word_count.items():
-    for word, count in word_count.word_freq.items():
-        frequency_count.append(
-            {
-                "word": word,
-                "count": count,
-            }
-        )
-
-    frequency_count = sorted(frequency_count, key=lambda x: (-x["count"]))
-    return frequency_count
+    return aggregate_word_stats(articles)["frequency"]
 
 
 def word_count(articles: QuerySet) -> WordCounter:
-    word_count = WordCounter([article.content for article in articles])
-    return word_count
+    """Backwards-compatible accessor returning the WordCounter object."""
+
+    return WordCounter([article.content for article in articles])
+
+
+def basic_text_stats(contents) -> dict:
+    """Compute lightweight stats: total words, unique words, TTR, hapax count."""
+
+    return aggregate_word_stats([type("obj", (), {"content": c}) for c in contents])
+
+
+def article_stats(articles: QuerySet) -> dict:
+    """Stats helper for a queryset of Article objects."""
+
+    return aggregate_word_stats(articles)
 
 
 def filter_by_match_type(results: SearchResult, match_type: int) -> SearchResult:

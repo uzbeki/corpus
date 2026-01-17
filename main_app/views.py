@@ -2,7 +2,13 @@ from django.http import HttpRequest, HttpResponse, JsonResponse, FileResponse
 from django.shortcuts import render
 from main_app.models import Article, Newspaper, create_frequency_csv
 from main_app.types import SearchResult
-from main_app.utils import filter_by_match_type, frequency_stats, word_count
+from main_app.utils import (
+    filter_by_match_type,
+    frequency_stats,
+    word_count,
+    article_stats,
+    aggregate_word_stats,
+)
 
 # from main_app.utils import frequency_stats as f
 
@@ -17,6 +23,8 @@ def index(request):
         "word_frequency": frequency_stats(Article.objects.all()),
         "article_count": Article.objects.count(),
         "word_count": Article.objects.count() * 500,
+        "text_stats": article_stats(Article.objects.all()),
+        "name_counts": Article.objects.total_name_counts(),
         "published_years": Article.objects.values("published_year")
         .distinct()
         .order_by("published_year")
@@ -53,21 +61,25 @@ def article_detail(request, article_id):
     """
     # get article
     article = Article.objects.get(id=article_id)
+    word_stats = aggregate_word_stats([article])
+    name_stats = Article.objects.annotated_name_stats(Article.objects.filter(id=article_id))
     # render article detail
     return render(
         request,
         "article_detail.html",
         {
             "article": article,
-            "word_frequency": frequency_stats([article]),
-            "word_count": word_count([article]).total_words,
+            "word_frequency": word_stats["frequency"],
+            "word_count": word_stats["total_words"],
+            "text_stats": word_stats,
+            "name_stats": name_stats,
         },
     )
 
 
 def word_frequency_data(request: HttpRequest) -> JsonResponse | HttpResponse:
     """
-    return json object of word frequency data
+    return json object of word frequency data plus annotated name stats
     """
 
     # check if "full" parameter is passed
@@ -81,12 +93,23 @@ def word_frequency_data(request: HttpRequest) -> JsonResponse | HttpResponse:
         return articles
 
     else:
-        english = Article.objects.filter(language=Article.ENGLISH)
-        uzbek = Article.objects.filter(language=Article.UZBEK)
+
+        def build_payload(language_code):
+            articles = Article.objects.filter(language=language_code)
+            word_stats = aggregate_word_stats(articles)
+            name_stats = Article.objects.annotated_name_stats(articles)
+            return {
+                "words": word_stats["frequency"][:20],
+                "names": {
+                    "frequency": name_stats["frequency"][:20],
+                    "counts": name_stats["counts"],
+                },
+            }
+
         return JsonResponse(
             {
-                "english": frequency_stats(english)[:20],
-                "uzbek": frequency_stats(uzbek)[:20],
+                "english": build_payload(Article.ENGLISH),
+                "uzbek": build_payload(Article.UZBEK),
             },
             safe=False,
         )
@@ -98,8 +121,18 @@ def article_frequency(request, article_id) -> JsonResponse:
     """
     return json object of word frequency data
     """
+    article = Article.objects.get(id=article_id)
+    word_stats = aggregate_word_stats([article])
+    name_stats = Article.objects.annotated_name_stats(Article.objects.filter(id=article_id))
     return JsonResponse(
-        frequency_stats([Article.objects.get(id=article_id)])[:20], safe=False
+        {
+            "words": word_stats["frequency"][:20],
+            "names": {
+                "frequency": name_stats["frequency"][:20],
+                "counts": name_stats["counts"],
+            },
+        },
+        safe=False,
     )
 
 
@@ -134,17 +167,24 @@ def year_archive(request, year: int):
         language=Article.UZBEK, published_year=f"{year}-01-01"
     )
 
+    english_stats = aggregate_word_stats(english)
+    uzbek_stats = aggregate_word_stats(uzbek)
+
     # render year archive
     return render(
         request,
         "year_archive.html",
         {
             "english_article_count": english.count(),
-            "english_frequency": frequency_stats(english),
-            "total_english_words": word_count(english).total_words,
+            "english_frequency": english_stats["frequency"],
+            "total_english_words": english_stats["total_words"],
+            "english_text_stats": english_stats,
+            "english_name_stats": Article.objects.annotated_name_stats(english),
             "uzbek_article_count": uzbek.count(),
-            "uzbek_frequency": frequency_stats(uzbek),
-            "total_uzbek_words": word_count(uzbek).total_words,
+            "uzbek_frequency": uzbek_stats["frequency"],
+            "total_uzbek_words": uzbek_stats["total_words"],
+            "uzbek_text_stats": uzbek_stats,
+            "uzbek_name_stats": Article.objects.annotated_name_stats(uzbek),
             "year": year,
         },
     )
@@ -168,15 +208,20 @@ def newspaper_detail(request, newspaper_id):
     """
     # get newspaper
     newspaper = Newspaper.objects.get(id=newspaper_id)
+    articles_qs = newspaper.article_set.all()
+    name_stats = Article.objects.annotated_name_stats(articles_qs)
+    word_stats = aggregate_word_stats(articles_qs)
     # render newspaper detail
     return render(
         request,
         "newspaper_detail.html",
         {
             "newspaper": newspaper,
-            "article_count": newspaper.article_set.count(),
-            "word_count": newspaper.article_set.count() * 500,
-            "word_frequency": frequency_stats(newspaper.article_set.all()),
+            "article_count": articles_qs.count(),
+            "word_count": word_stats["total_words"],
+            "word_frequency": word_stats["frequency"],
+            "name_stats": name_stats,
+            "text_stats": word_stats,
         },
     )
 
@@ -185,8 +230,18 @@ def newspaper_frequency(request, newspaper_id) -> JsonResponse:
     """
     return json object of word frequency data
     """
+    articles = Article.objects.filter(newspaper_id=newspaper_id)
+    word_stats = aggregate_word_stats(articles)
+    name_stats = Article.objects.annotated_name_stats(articles)
+
     return JsonResponse(
-        frequency_stats(Article.objects.filter(newspaper_id=newspaper_id)[:20]),
+        {
+            "words": word_stats["frequency"][:20],
+            "names": {
+                "frequency": name_stats["frequency"][:20],
+                "counts": name_stats["counts"],
+            },
+        },
         safe=False,
     )
 

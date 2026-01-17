@@ -6,7 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <title>{% block title %}Home{% endblock title %} | mediatextcorpus.com</title>
+    <title>{% block title %}Home{% endblock title %} | zakhri-corpus.com</title>
     
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
     <link rel="stylesheet" href="{% static 'css/form.css' %}">
@@ -17,5 +17,7 @@
 <main>{% block main %}{% endblock main %}</main>
 {% block footer %}{% include "footer.html" %}
 {% endblock footer %}
+
+<script src="{% static 'js/gender_annotations.js' %}" defer></script>
 </body>
 </html>

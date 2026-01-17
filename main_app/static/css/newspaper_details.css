@@ -49,6 +49,74 @@ h1 {
     border: 1px solid #ccc;
 }
 
+#chartBox {
+    width: 100%;
+    margin: 0 auto;
+}
+
+#chartBox canvas {
+    margin: 0 auto;
+    width: 100%;
+}
+
+#chartBox .chartLabels {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    background: #fff;
+    border: 1px solid #dadce0;
+    border-radius: 0.75rem;
+}
+
+#chartBox .chartLabels .toggleGroup {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+#chartBox .chartLabels .toggleLabel {
+    font-size: 0.9rem;
+    color: #555;
+    font-weight: 600;
+}
+
+#chartBox .chartLabels .radioButton {
+    position: relative;
+}
+
+#chartBox .chartLabels .radioButton input {
+    display: none;
+}
+
+#chartBox .chartLabels .radioButton label {
+    display: block;
+    padding: 0.45rem 0.9rem;
+    border: 1px solid #d0d4db;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    font-size: 0.9rem;
+    background: #f8f9fb;
+    color: #333;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+#chartBox .chartLabels .radioButton input:checked + label {
+    background-color: #1e88e5;
+    border-color: #1e88e5;
+    color: #fff;
+    box-shadow: 0 4px 8px rgba(30, 136, 229, 0.15);
+}
+
+#chartBox .chartLabels .radioButton label:active {
+    transform: translateY(1px);
+}
+
 @media screen and (max-width: 768px) {
     #articles {
         gap: 1.25rem;

@@ -1,7 +1,7 @@
 {% comment %} Navigation with search bar {% endcomment %}
 <header>
     <form class="form-inline my-2 my-lg-0" action="{% url 'search' %}" method="get">
-        <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search" name="q" value="{{request.GET.q}}" pattern='[A-Za-z0-9 ]{1,}' title='Only letters and numbers are allowed.' required>
+        <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search" name="q" value="{{request.GET.q}}" title='Only letters and numbers are allowed.' required>
         <select name="language" id="language" class="languageSelect" >
             <option value="1" {% if request.GET.language == '1' %} selected {% endif %}>English</option>
             <option value="2" {% if request.GET.language == '2' %} selected {% endif %}>Uzbek</option>

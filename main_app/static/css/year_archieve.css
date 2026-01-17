@@ -40,6 +40,18 @@ main h1 {
     padding-inline-start: 4rem;
 }
 
+.lists-row {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+
+.list-col {
+    flex: 1;
+    min-width: 280px;
+}
+
 #content .language-content h3 {
     text-align: center;
     margin: 1rem;

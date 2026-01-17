@@ -18,107 +18,206 @@
             </div>
             <div class="stat">
                 <h4>{{ word_count|intcomma }}</h4>
-                <p>Words</p>
+                <p>Words (non-unique, est.)</p>
+            </div>
+            <div class="stat">
+                <h4>{{ name_counts.total|intcomma }}</h4>
+                <p>Annotated names (non-unique)</p>
+            </div>
+            <div class="stat">
+                <h4>{{ text_stats.ttr|floatformat:3 }}</h4>
+                <p>TTR (unique / total)</p>
+            </div>
+            <div class="stat">
+                <h4>{{ text_stats.hapax_count|intcomma }}</h4>
+                <p>Hapax (appear once)</p>
             </div>
         </div>
         <div id="chartBox">
             <div class="chartLabels">
-                <div class="radioButton">
-                    <input type="radio" id="english" name="language" value="english" checked>
-                    <label for="english">English</label>
+                <div class="toggleGroup" aria-label="Select language for the chart">
+                    <span class="toggleLabel">Language</span>
+                    <div class="radioButton">
+                        <input type="radio" id="english" name="language" value="english" checked>
+                        <label for="english">English</label>
+                    </div>
+                    <div class="radioButton">
+                        <input type="radio" id="uzbek" name="language" value="uzbek">
+                        <label for="uzbek">Uzbek</label>
+                    </div>
                 </div>
-                <div class="radioButton">
-                    <input type="radio" id="uzbek" name="language" value="uzbek">
-                    <label for="uzbek">Uzbek</label>
+                <div class="toggleGroup" aria-label="Select metric for the chart">
+                    <span class="toggleLabel">Dataset</span>
+                    <div class="radioButton">
+                        <input type="radio" id="dataset-words" name="dataset" value="words" checked>
+                        <label for="dataset-words">Words</label>
+                    </div>
+                    <div class="radioButton">
+                        <input type="radio" id="dataset-names" name="dataset" value="names">
+                        <label for="dataset-names">Names</label>
+                    </div>
                 </div>
             </div>
             <canvas id="word-frequency-chart"></canvas>
             <div id="download"><button type="button">download full frequency data</button></div>
         </div>
         <script>
-        const url = "{% url 'word_frequency_data' %}"; // Replace with the URL of your Django view that returns the word frequency data
+        const url = "{% url 'word_frequency_data' %}";
+        const ctx = document.getElementById("word-frequency-chart").getContext("2d");
+        const languageRadios = document.getElementsByName('language');
+        const datasetRadios = document.getElementsByName('dataset');
+        const fullDownloadBtn = document.querySelector("#download button");
+
+        let chart;
+        let chartData;
+        let currentLanguage = 'english';
+        let currentMetric = 'words';
+
+        const tooltipCallback = (context) => {
+            const value = context.parsed.y;
+            const total = context.dataset.totalCount || 0;
+            const pct = total ? ((value / total) * 100).toFixed(2) : '0.00';
+            return `${context.label}: ${value} (${pct}%)`;
+        };
+
+        const chartOptions = (showLegend) => ({
+            responsive: true,
+            scales: { y: { beginAtZero: true } },
+            plugins: {
+                legend: { display: showLegend },
+                tooltip: {
+                    callbacks: {
+                        label: tooltipCallback,
+                        footer: () => 'Top-slice total shown; full CSV has more.'
+                    }
+                }
+            }
+        });
+
+        const buildChartConfig = (language, metric) => {
+            const langData = chartData[language] || {};
+
+            if (metric === 'words') {
+                const words = langData.words || [];
+                const total = words.reduce((acc, cur) => acc + (cur.count || 0), 0);
+                return {
+                    labels: words.map(item => item.word),
+                    datasets: [
+                        {
+                            label: `Top ${words.length} words (total ${total})`,
+                            data: words.map(item => item.count),
+                            backgroundColor: "rgba(255, 99, 132, 0.2)",
+                            borderColor: "rgba(255, 99, 132, 1)",
+                            borderWidth: 1,
+                            totalCount: total,
+                        },
+                    ],
+                    legend: false,
+                };
+            }
+
+            if (metric === 'names') {
+                const names = (langData.names && langData.names.frequency) || [];
+                const counts = (langData.names && langData.names.counts) || {};
+                const labels = names.map(item => item.name);
+                const maleData = names.map(item => item.gender === 'male' ? item.count : 0);
+                const femaleData = names.map(item => item.gender === 'female' ? item.count : 0);
+                const maleTotal = counts.male ?? maleData.reduce((acc, cur) => acc + cur, 0);
+                const femaleTotal = counts.female ?? femaleData.reduce((acc, cur) => acc + cur, 0);
+
+                return {
+                    labels,
+                    datasets: [
+                        {
+                            label: `Male names (total ${maleTotal})`,
+                            data: maleData,
+                            backgroundColor: "rgba(75, 192, 192, 0.3)",
+                            borderColor: "rgba(75, 192, 192, 1)",
+                            borderWidth: 1,
+                            totalCount: maleTotal,
+                        },
+                        {
+                            label: `Female names (total ${femaleTotal})`,
+                            data: femaleData,
+                            backgroundColor: "rgba(153, 102, 255, 0.3)",
+                            borderColor: "rgba(153, 102, 255, 1)",
+                            borderWidth: 1,
+                            totalCount: femaleTotal,
+                        },
+                    ],
+                    legend: true,
+                };
+            }
+
+            return { labels: [], datasets: [], legend: false };
+        };
+
+        const updateDownloadState = () => {
+            const isWords = currentMetric === 'words';
+            fullDownloadBtn.disabled = !isWords;
+            fullDownloadBtn.textContent = isWords
+                ? 'download full frequency data'
+                : 'download available for words only';
+        };
+
+        const updateChart = () => {
+            const config = buildChartConfig(currentLanguage, currentMetric);
+            chart.data.labels = config.labels;
+            chart.data.datasets = config.datasets;
+            chart.options.plugins.legend.display = config.legend;
+            chart.update();
+            updateDownloadState();
+        };
+
         fetch(url)
             .then(response => response.json())
             .then(data => {
-                console.log(data);
-                const ctx = document.getElementById("word-frequency-chart").getContext("2d");
-                const chart = new Chart(ctx, {
+                chartData = data;
+                const initialConfig = buildChartConfig(currentLanguage, currentMetric);
+                chart = new Chart(ctx, {
                     type: "bar",
-                    data: {
-                        labels: data['english'].map(item => item.word),
-                        datasets: [
-                            {
-                                label: "Frequency",
-                                data: data['english'].map(item => item.count),
-                                backgroundColor: "rgba(255, 99, 132, 0.2)",
-                                borderColor: "rgba(255, 99, 132, 1)",
-                                borderWidth: 1
-                            },
-                            {
-                                label: "Frequency",
-                                data: data['uzbek'].map(item => item.count),
-                                
-                                borderWidth: 1,
-                                hidden: true,
-                                backgroundColor: "rgba(54, 162, 235, 0.2)",
-                                borderColor: "rgba(54, 162, 235, 1)"
-                            },
-                        ]
-                    },
-                    options: {
-                        responsive: true, 
-                        scales: {y: {beginAtZero: true}},
-                        plugins: {legend: {display: false}}
-                    }
+                    data: { labels: initialConfig.labels, datasets: initialConfig.datasets },
+                    options: chartOptions(initialConfig.legend),
                 });
 
-                // toggle dataset 1 and dataset 2 on radio button change
-                const radioButtons = document.getElementsByName('language');
-                for (let i = 0; i < radioButtons.length; i++) {
-                    radioButtons[i].addEventListener('change', function() {
-                        var dataset1 = chart.data.datasets[0];
-                        var dataset2 = chart.data.datasets[1];
-                    
-                        if (this.value === 'english') {
-                            // dataset1.label = 'English';
-                            // dataset2.label = 'Uzbek';
-                            dataset1.hidden = false;
-                            dataset2.hidden = true;
-                            chart.data.labels = data['english'].map(item => item.word);
-                        } else if (this.value === 'uzbek') {
-                            // dataset1.label = 'Uzbek';
-                            // dataset2.label = 'English';
-                            dataset1.hidden = true;
-                            dataset2.hidden = false;
-                            chart.data.labels = data['uzbek'].map(item => item.word);
-                        }
-                    
-                        chart.update();
-                    });
-                }
-            }).then(()=>{
-                const fullDownloadBtn = document.querySelector("#download button");
-                // fetch and download full frequency data as csv
+                languageRadios.forEach(radio => radio.addEventListener('change', (event) => {
+                    currentLanguage = event.target.value;
+                    updateChart();
+                }));
+
+                datasetRadios.forEach(radio => radio.addEventListener('change', (event) => {
+                    currentMetric = event.target.value;
+                    updateChart();
+                }));
+
+                updateDownloadState();
+            })
+            .catch(() => {
+                console.error('Failed to load chart data');
+            })
+            .then(() => {
                 fullDownloadBtn.addEventListener('click', () => {
+                    if (currentMetric !== 'words') {
+                        return;
+                    }
                     const checkedInput = document.querySelector('#chartBox input[name="language"]:checked');
-                    const url = "{% url 'word_frequency_data' %}?full=1&language=" + checkedInput.value;
-                    fetch(url)
+                    const downloadUrl = "{% url 'word_frequency_data' %}?full=1&language=" + checkedInput.value;
+                    fetch(downloadUrl)
                         .then(response => response.blob())
                         .then(blob => {
                             if (!blob.size) return;
-                            const url = window.URL.createObjectURL(blob);
+                            const blobUrl = window.URL.createObjectURL(blob);
                             const a = document.createElement('a');
                             a.style.display = 'none';
-                            a.href = url;
-                            // the filename you want
+                            a.href = blobUrl;
                             a.download = `word_frequency_${checkedInput.value}_${Date.now()}.csv`;
                             document.body.appendChild(a);
                             a.click();
-                            window.URL.revokeObjectURL(url);
+                            window.URL.revokeObjectURL(blobUrl);
                         })
                         .catch(() => alert('oh no!'));
                 });
-            })
+            });
         </script>
 
     </section>
@@ -141,9 +240,9 @@
                         <div>{{ article.get_language_display }}</div>
                     </h3>
                     {% if forloop.first %}
-                    <p>{{ article.content|truncatewords:50 }}</p>
+                    <p data-gender-annotations>{{ article.content|truncatewords:50 }}</p>
                     {% else %}
-                    <p>{{ article.content|truncatewords:30 }}</p>
+                    <p data-gender-annotations>{{ article.content|truncatewords:30 }}</p>
                     {% endif %}
                     <div>
                         <span><i> By {{ article.author|truncatewords:2 }}</i>, </span>

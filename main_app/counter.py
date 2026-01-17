@@ -2,13 +2,26 @@ KEEP_TOP_WORDS = 10
 
 import re
 
+_APOSTROPHE_TRANSLATION = str.maketrans({
+    "’": "'",  # U+2019 right single quotation mark
+    "ʼ": "'",  # U+02BC modifier letter apostrophe
+    "‘": "'",  # U+2018 left single quotation mark
+    "′": "'",  # U+2032 prime
+    "`": "'",  # grave accent
+})
+
 def cleanse_word(word:str):
     """
     Clean word using defined rules
     :param word:
     :return:
     """
-    return re.sub(r'[^\w\s]', '', word.lower())
+    normalized = word.translate(_APOSTROPHE_TRANSLATION).lower()
+    # Keep alphanumerics and internal apostrophes; drop everything else.
+    normalized = re.sub(r"[^0-9a-zA-Z']+", "", normalized)
+    # Trim leading/trailing apostrophes introduced by stripping punctuation.
+    normalized = normalized.strip("'")
+    return normalized
 
 
 class WordCounter:
