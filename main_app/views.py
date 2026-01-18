@@ -55,6 +55,60 @@ def search(request: HttpRequest):
     )
 
 
+def search_new(request: HttpRequest):
+    """Experimental search view with yearly chart and grouped results."""
+
+    query = (request.GET.get("q") or "").strip()
+    language = int(request.GET.get("language") or Article.ENGLISH)
+    year = request.GET.get("year") or None
+    match_type = int(request.GET.get("match_type") or 0)
+
+    results: SearchResult = Article.objects.search(query, language, year)
+    if match_type != 0:
+        results = filter_by_match_type(results, match_type)
+
+    grouped: dict[int, dict] = {}
+    for item in results["results"]:
+        article = item["article"]
+        year_val = article.published_year.year if article.published_year else 0
+
+        bucket = grouped.setdefault(
+            year_val, {"year": year_val, "total_frequency": 0, "articles": {}}
+        )
+        bucket["total_frequency"] += item["frequency"]
+
+        articles_map = bucket["articles"]
+        art = articles_map.setdefault(
+            article.id,
+            {"article_id": article.id, "title": article.title, "matches": []},
+        )
+
+        for loc in item["locations"]:
+            art["matches"].append({"type": loc["type"], "context": loc["context"]})
+
+    year_sections = sorted(grouped.values(), key=lambda x: x["year"], reverse=True)
+    for bucket in year_sections:
+        bucket["articles"] = list(bucket["articles"].values())
+
+    year_chart = [
+        {"year": bucket["year"], "total": bucket["total_frequency"]}
+        for bucket in sorted(grouped.values(), key=lambda x: x["year"])
+        if bucket["year"] != 0
+    ]
+
+    return render(
+        request,
+        "search_new.html",
+        {
+            "query": query,
+            "results": results,
+            "match_type": match_type,
+            "year_sections": year_sections,
+            "year_chart": year_chart,
+        },
+    )
+
+
 def article_detail(request, article_id):
     """
     Article detail view

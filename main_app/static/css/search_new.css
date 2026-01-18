@@ -1,0 +1,178 @@
+body {
+    background: #f7f8fb;
+}
+
+.search-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin: 1.5rem 0;
+    flex-wrap: wrap;
+}
+
+.search-header h1 {
+    margin: 0;
+    font-size: 1.6rem;
+}
+
+.search-header .meta {
+    margin: 0.25rem 0 0;
+    color: #555;
+}
+
+.search-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.pill {
+    display: inline-block;
+    padding: 0.5rem 0.9rem;
+    border-radius: 999px;
+    border: 1px solid #d0d4db;
+    background: #fff;
+    text-decoration: none;
+    color: #1e88e5;
+    font-weight: 600;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.pill:hover {
+    background: rgba(30, 136, 229, 0.1);
+    border-color: #1e88e5;
+}
+
+.chart-card {
+    background: #fff;
+    border: 1px solid #dadce0;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.chart-card .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+#chartBox {
+    width: 100%;
+}
+
+#chartBox canvas {
+    width: 100%;
+}
+
+.results h2 {
+    margin-bottom: 0.5rem;
+}
+
+.year-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.year-block {
+    border: 1px solid #dadce0;
+    border-radius: 0.6rem;
+    background: #fff;
+    padding: 0.25rem 0.75rem;
+}
+
+.year-block summary {
+    cursor: pointer;
+    list-style: none;
+}
+
+.year-block summary::-webkit-details-marker {
+    display: none;
+}
+
+.year-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.5rem 0;
+}
+
+.year-label {
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.year-total {
+    font-size: 0.95rem;
+    color: #555;
+}
+
+.matches {
+    padding: 0.5rem 0.25rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.article-group ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.match-link {
+    display: block;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid #e3e6eb;
+    border-radius: 0.5rem;
+    background: #f9fafc;
+    text-decoration: none;
+    color: #222;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.match-link:hover {
+    border-color: #1e88e5;
+    box-shadow: 0 3px 8px rgba(30, 136, 229, 0.12);
+    background: #fff;
+}
+
+.match-type {
+    display: inline-block;
+    margin-right: 0.5rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: capitalize;
+    color: #0d47a1;
+    background: rgba(30, 136, 229, 0.12);
+}
+
+.match-context {
+    font-size: 0.95rem;
+    color: #333;
+}
+
+.highlight {
+    background-color: hsl(60, 100%, 50%);
+    color: #000;
+    padding: 0 0.1em;
+}
+
+@media screen and (max-width: 700px) {
+    .year-meta {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .match-link {
+        font-size: 0.95rem;
+    }
+}

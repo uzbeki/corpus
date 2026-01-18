@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% load static humanize %}
+{% block title %}New Search | {{ query }}{% endblock title %}
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="{% static "css/search_new.css" %}">
+{% endblock extra_head %}
+
+{% block main %}
+<section class="search-header">
+    <div>
+        <h1>Search (new) for "{{ query }}"</h1>
+        <p class="meta">Total frequency: {{ results.total_frequency|default:0|intcomma }}</p>
+    </div>
+</section>
+
+<section class="chart-card">
+    <div class="card-header">
+        <div>
+            <h2>Occurrences by year</h2>
+            <p>Ascending totals for "{{ query }}"</p>
+        </div>
+    </div>
+    <div id="chartBox">
+        <canvas id="year-chart"></canvas>
+    </div>
+</section>
+
+<section class="results">
+    <h2>Results grouped by year</h2>
+    {% if year_sections %}
+        <div class="year-groups">
+            {% for bucket in year_sections %}
+            <details class="year-block" {% if forloop.first %}open{% endif %}>
+                <summary>
+                    <div class="year-meta">
+                        <span class="year-label">{{ bucket.year|default:"Unknown" }}</span>
+                        <span class="year-total">{{ bucket.total_frequency|intcomma }} occurrences</span>
+                    </div>
+                </summary>
+                <div class="matches">
+                    {% for article in bucket.articles %}
+                    <div class="article-group" title="{{ article.title }}">
+                        <ul>
+                            {% for match in article.matches %}
+                            <li>
+                                <a class="match-link" href="{% url 'article_detail' article_id=article.article_id %}" target="_blank" rel="noopener">
+                                    <span class="match-type">{{ match.type }}</span>
+                                    <span class="match-context" data-hightlight="{{ query }}" data-gender-annotations>{{ match.context }}</span>
+                                </a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endfor %}
+                </div>
+            </details>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>No results found.</p>
+    {% endif %}
+</section>
+
+{{ year_chart|json_script:"year-chart-data" }}
+<script>
+    const chartDataEl = document.getElementById('year-chart-data');
+    const chartData = chartDataEl ? JSON.parse(chartDataEl.textContent) : [];
+    const ctx = document.getElementById('year-chart');
+
+    if (ctx && chartData.length) {
+        const labels = chartData.map(item => item.year);
+        const totals = chartData.map(item => item.total);
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Occurrences',
+                    data: totals,
+                    tension: 0.25,
+                    fill: false,
+                    borderColor: 'rgba(30, 136, 229, 1)',
+                    backgroundColor: 'rgba(30, 136, 229, 0.15)',
+                    pointBackgroundColor: 'rgba(30, 136, 229, 1)',
+                    pointRadius: 4,
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true },
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.parsed.y;
+                                return `${context.label}: ${value}`;
+                            }
+                        }
+                    },
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+
+    function highlightPhrase(el, phrase) {
+        const text = el.innerHTML;
+        const highlightedText = text.replace(new RegExp(phrase, 'gi'), "<span class='highlight'>$&</span>");
+        el.innerHTML = highlightedText;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const elements = document.querySelectorAll('[data-hightlight]');
+        elements.forEach(function(e) {
+            highlightPhrase(e, e.dataset.hightlight);
+        });
+    });
+</script>
+{% endblock main %}
