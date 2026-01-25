@@ -3,22 +3,146 @@
 
 {% block extra_head %}
 <title>{% block head_title %}{% endblock %}</title>
+<style>
+  .auth-shell {
+    width: 100%;
+    max-width: 640px;
+  }
+  .auth-card h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #ffffff;
+  }
+  .auth-card p,
+  .auth-card small {
+    color: #94a3b8;
+  }
+  .auth-card a {
+    color: #93c5fd;
+  }
+  .auth-card a:hover {
+    color: #bfdbfe;
+  }
+  .auth-form p {
+    margin-top: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+  .auth-form label {
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #94a3b8;
+  }
+  .auth-form input,
+  .auth-form select,
+  .auth-form textarea {
+    height: 2.6rem;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(30, 41, 59, 0.8);
+    background: rgba(15, 23, 42, 0.8);
+    padding: 0 0.85rem;
+    color: #e2e8f0;
+    outline: none;
+  }
+  .auth-form textarea {
+    min-height: 6rem;
+    padding: 0.75rem 0.85rem;
+    height: auto;
+  }
+  .auth-form input:focus,
+  .auth-form select:focus,
+  .auth-form textarea:focus {
+    border-color: rgba(59, 130, 246, 0.9);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+  }
+  .auth-actions {
+    margin-top: 1.2rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+  }
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.75rem;
+    background: #2563eb;
+    color: #fff;
+    padding: 0.6rem 1.2rem;
+    font-weight: 600;
+  }
+  .btn-primary:hover {
+    background: #3b82f6;
+  }
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(51, 65, 85, 1);
+    color: #e2e8f0;
+    padding: 0.6rem 1.2rem;
+    font-weight: 500;
+  }
+  .btn-secondary:hover {
+    border-color: rgba(59, 130, 246, 0.7);
+    color: #fff;
+  }
+  .btn-ghost {
+    color: #cbd5f5;
+    font-weight: 500;
+  }
+  .btn-ghost:hover {
+    color: #fff;
+  }
+  .errorlist {
+    margin-top: 0.5rem;
+    padding: 0.6rem 0.8rem;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(248, 113, 113, 0.4);
+    background: rgba(248, 113, 113, 0.12);
+    color: #fecaca;
+    list-style: none;
+  }
+  .auth-form input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    accent-color: #3b82f6;
+  }
+  .auth-form label:has(input[type="checkbox"]) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-transform: none;
+    letter-spacing: normal;
+    color: #e2e8f0;
+  }
+</style>
 {% endblock extra_head %}
 
 {% block main %}
-    {% if messages %}
-    <div>
-      <strong>{% trans "Messages:" %}</strong>
-      <ul>
-        {% for message in messages %}
-        <li>{{message}}</li>
-        {% endfor %}
-      </ul>
-    </div>
-    {% endif %}
+    <section class="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+      <div class="auth-shell mx-auto">
+        {% if messages %}
+        <div class="mb-6 rounded-2xl border border-slate-800 bg-slate-900/60 p-4 text-sm text-slate-200">
+          <strong class="block text-xs uppercase tracking-[0.2em] text-slate-400">{% trans "Messages:" %}</strong>
+          <ul class="mt-2 space-y-1">
+            {% for message in messages %}
+            <li>{{message}}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
 
-    {% block content %}
-    {% endblock content %}
+        <div class="auth-card rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-soft">
+          {% block content %}
+          {% endblock content %}
+        </div>
+      </div>
+    </section>
     {% block extra_body %}
     {% endblock extra_body %}
 {% endblock main %}

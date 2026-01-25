@@ -1,5 +1,7 @@
 {% load static %}
-<footer>
-    <p>Authored by <a title="click to download the resume in pdf format" href="{% static "/files/ZahriddinXaitqulovCV.pdf" %}" download>Zahriddin Xaitqulov</a></p>
-    <p>©{% now "Y" %} - zakhri-corpus.com</p>
+<footer class="border-t border-slate-800/70 bg-slate-950">
+    <div class="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-8 text-center text-sm text-slate-400 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:text-left lg:px-8">
+        <p>Authored by <a class="text-slate-200 transition hover:text-white" title="click to download the resume in pdf format" href="{% static "/files/ZahriddinXaitqulovCV.pdf" %}" download>Zahriddin Xaitqulov</a></p>
+        <p>©{% now "Y" %} - zakhri-corpus.com</p>
+    </div>
 </footer>

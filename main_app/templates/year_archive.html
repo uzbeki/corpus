@@ -3,119 +3,132 @@
 {% block title %}{{year}} statistics{% endblock title %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/year_archieve.css' %}">
 {% endblock extra_head %}
 
 {% block main %}
-<h1>{{year}} statistics</h1>
-
-<section id='content'>
-    <div class="language-content">
-        <div class="stats">
-            <div class="stat">
-                <h4>{{ english_article_count|intcomma }}</h4>
-                <p>English articles</p>
-            </div>
-            <div class="stat">
-                <h4>{{ total_english_words|intcomma }}</h4>
-                <p>Total English words (non-unique)</p>
-            </div>
-            <div class="stat">
-                <h4>{{ english_frequency|length|intcomma }}</h4>
-                <p>Unique English words (types)</p>
-            </div>
-            <div class="stat">
-                <h4>{{ english_name_stats.counts.total|intcomma }}</h4>
-                <p>Annotated names (non-unique)</p>
-            </div>
-            <div class="stat">
-                <h4>{{ english_text_stats.ttr|floatformat:3 }}</h4>
-                <p>TTR (unique / total)</p>
-            </div>
-            <div class="stat">
-                <h4>{{ english_text_stats.hapax_count|intcomma }}</h4>
-                <p>Hapax (appear once)</p>
-            </div>
-        </div>
-
-        <div class="lists-row">
-            <div class="list-col">
-                <h3>English words' frequency data</h3>
-                <div class="download"><a href="{% url 'year_archive_download' year=year language=1 %}">download to CSV</a></div>
-                <ol>
-                    {% for freq in english_frequency %}
-                    <li>
-                        <a href="{% url 'search' %}?q={{freq.word}}&language=1" title="click to search for {{freq.word}}">{{freq.word}} ({{freq.count|intcomma}})</a>
-                        {% comment %} {{freq.word}} ({{freq.count}}) {% endcomment %}
-                    </li>
-                    {% endfor %}
-                </ol>
-            </div>
-            <div class="list-col">
-                <h3>English annotated names</h3>
-                <ol>
-                    {% for item in english_name_stats.frequency %}
-                    <li>
-                        <a href="{% url 'search' %}?q={{ item.name }}&language=1" title="click to search for {{ item.name }}">{{ item.name }}</a> ({{ item.gender }}) — {{ item.count|intcomma }}
-                    </li>
-                    {% empty %}
-                    <li>No annotated names.</li>
-                    {% endfor %}
-                </ol>
-            </div>
-        </div>
+<section class="space-y-8">
+    <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-soft">
+        <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Year overview</p>
+        <h1 class="mt-2 text-3xl font-semibold text-white">{{year}} statistics</h1>
+        <p class="mt-2 text-sm text-slate-400">Compare English and Uzbek corpora across lexical frequency, annotated names, and lexical diversity.</p>
     </div>
-    <div class="language-content">
-        <div class="stats">
-            <div class="stat">
-                <h4>{{ uzbek_article_count|intcomma }}</h4>
-                <p>Uzbek articles</p>
+
+    <div class="grid gap-6 lg:grid-cols-2">
+        <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-soft">
+            <div class="flex items-center justify-between">
+                <h2 class="text-xl font-semibold text-white">English</h2>
+                <a class="rounded-full border border-slate-700 px-3 py-1 text-sm text-slate-200 transition hover:border-brand-500 hover:text-white" href="{% url 'year_archive_download' year=year language=1 %}">download CSV</a>
             </div>
-            <div class="stat">
-                <h4>{{ total_uzbek_words|intcomma }}</h4>
-                <p>Total Uzbek words (non-unique)</p>
+            <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Articles</p>
+                    <h4 class="mt-3 text-2xl font-semibold text-white">{{ english_article_count|intcomma }}</h4>
+                </div>
+                <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Total words</p>
+                    <h4 class="mt-3 text-2xl font-semibold text-white">{{ total_english_words|intcomma }}</h4>
+                </div>
+                <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Unique words</p>
+                    <h4 class="mt-3 text-2xl font-semibold text-white">{{ english_frequency|length|intcomma }}</h4>
+                </div>
+                <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Annotated names</p>
+                    <h4 class="mt-3 text-2xl font-semibold text-white">{{ english_name_stats.counts.total|intcomma }}</h4>
+                </div>
+                <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">TTR</p>
+                    <h4 class="mt-3 text-2xl font-semibold text-white">{{ english_text_stats.ttr|floatformat:3 }}</h4>
+                </div>
+                <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Hapax</p>
+                    <h4 class="mt-3 text-2xl font-semibold text-white">{{ english_text_stats.hapax_count|intcomma }}</h4>
+                </div>
             </div>
-            <div class="stat">
-                <h4>{{ uzbek_frequency|length|intcomma }}</h4>
-                <p>Unique Uzbek words (types)</p>
-            </div>
-            <div class="stat">
-                <h4>{{ uzbek_name_stats.counts.total|intcomma }}</h4>
-                <p>Annotated names (non-unique)</p>
-            </div>
-            <div class="stat">
-                <h4>{{ uzbek_text_stats.ttr|floatformat:3 }}</h4>
-                <p>TTR (unique / total)</p>
-            </div>
-            <div class="stat">
-                <h4>{{ uzbek_text_stats.hapax_count|intcomma }}</h4>
-                <p>Hapax (appear once)</p>
+            <div class="mt-6 grid gap-6 lg:grid-cols-2">
+                <div>
+                    <h3 class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">Word frequency</h3>
+                    <ol class="mt-3 space-y-2 text-sm text-slate-200">
+                        {% for freq in english_frequency %}
+                        <li class="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2">
+                            <a href="{% url 'search' %}?q={{freq.word}}&language=1&year={{year}}&match_type=1" title="click to search for {{freq.word}}" class="transition hover:text-white">{{freq.word}}</a>
+                            <span class="text-slate-400">{{freq.count|intcomma}}</span>
+                        </li>
+                        {% endfor %}
+                    </ol>
+                </div>
+                <div>
+                    <h3 class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">Annotated names</h3>
+                    <ol class="mt-3 space-y-2 text-sm text-slate-200">
+                        {% for item in english_name_stats.frequency %}
+                        <li class="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2">
+                            <a href="{% url 'search' %}?q={{ item.name }}&language=1&year={{year}}&match_type=1" title="click to search for {{ item.name }}" class="transition hover:text-white">{{ item.name }}</a>
+                            <span class="text-slate-400">{{ item.gender }} · {{ item.count|intcomma }}</span>
+                        </li>
+                        {% empty %}
+                        <li class="rounded-xl border border-dashed border-slate-700 px-3 py-3 text-sm text-slate-400">No annotated names.</li>
+                        {% endfor %}
+                    </ol>
+                </div>
             </div>
         </div>
-        <div class="lists-row">
-            <div class="list-col">
-                <h3>Uzbek words' frequency data</h3>
-                <div class="download"><a href="{% url 'year_archive_download' year=year language=2 %}">download to CSV</a></div>
-                <ol>
-                    {% for freq in uzbek_frequency %}
-                    <li>
-                        <a href="{% url 'search' %}?q={{freq.word}}&language=2" title="click to search for {{freq.word}}">{{freq.word}} ({{freq.count|intcomma}})</a>
-                        {% comment %} {{freq.word}} ({{freq.count|intcomma}}) {% endcomment %}
-                    </li>
-                    {% endfor %}
-                </ol>
+
+        <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-soft">
+            <div class="flex items-center justify-between">
+                <h2 class="text-xl font-semibold text-white">Uzbek</h2>
+                <a class="rounded-full border border-slate-700 px-3 py-1 text-sm text-slate-200 transition hover:border-brand-500 hover:text-white" href="{% url 'year_archive_download' year=year language=2 %}">download CSV</a>
             </div>
-            <div class="list-col">
-                <h3>Uzbek annotated names</h3>
-                <ol>
-                    {% for item in uzbek_name_stats.frequency %}
-                    <li>
-                        <a href="{% url 'search' %}?q={{ item.name }}&language=2" title="click to search for {{ item.name }}">{{ item.name }}</a> ({{ item.gender }}) — {{ item.count|intcomma }}
-                    </li>
-                    {% empty %}
-                    <li>No annotated names.</li>
-                    {% endfor %}
-                </ol>
+            <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Articles</p>
+                    <h4 class="mt-3 text-2xl font-semibold text-white">{{ uzbek_article_count|intcomma }}</h4>
+                </div>
+                <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Total words</p>
+                    <h4 class="mt-3 text-2xl font-semibold text-white">{{ total_uzbek_words|intcomma }}</h4>
+                </div>
+                <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Unique words</p>
+                    <h4 class="mt-3 text-2xl font-semibold text-white">{{ uzbek_frequency|length|intcomma }}</h4>
+                </div>
+                <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Annotated names</p>
+                    <h4 class="mt-3 text-2xl font-semibold text-white">{{ uzbek_name_stats.counts.total|intcomma }}</h4>
+                </div>
+                <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">TTR</p>
+                    <h4 class="mt-3 text-2xl font-semibold text-white">{{ uzbek_text_stats.ttr|floatformat:3 }}</h4>
+                </div>
+                <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Hapax</p>
+                    <h4 class="mt-3 text-2xl font-semibold text-white">{{ uzbek_text_stats.hapax_count|intcomma }}</h4>
+                </div>
+            </div>
+            <div class="mt-6 grid gap-6 lg:grid-cols-2">
+                <div>
+                    <h3 class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">Word frequency</h3>
+                    <ol class="mt-3 space-y-2 text-sm text-slate-200">
+                        {% for freq in uzbek_frequency %}
+                        <li class="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2">
+                            <a href="{% url 'search' %}?q={{freq.word}}&language=2&year={{year}}&match_type=1" title="click to search for {{freq.word}}" class="transition hover:text-white">{{freq.word}}</a>
+                            <span class="text-slate-400">{{freq.count|intcomma}}</span>
+                        </li>
+                        {% endfor %}
+                    </ol>
+                </div>
+                <div>
+                    <h3 class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">Annotated names</h3>
+                    <ol class="mt-3 space-y-2 text-sm text-slate-200">
+                        {% for item in uzbek_name_stats.frequency %}
+                        <li class="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2">
+                            <a href="{% url 'search' %}?q={{ item.name }}&language=2&year={{year}}&match_type=1" title="click to search for {{ item.name }}" class="transition hover:text-white">{{ item.name }}</a>
+                            <span class="text-slate-400">{{ item.gender }} · {{ item.count|intcomma }}</span>
+                        </li>
+                        {% empty %}
+                        <li class="rounded-xl border border-dashed border-slate-700 px-3 py-3 text-sm text-slate-400">No annotated names.</li>
+                        {% endfor %}
+                    </ol>
+                </div>
             </div>
         </div>
     </div>

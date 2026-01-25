@@ -6,6 +6,7 @@ from . import views
 register_converter(FourDigitYearConverter, "yyyy")
 urlpatterns = [
     path("", views.index, name="index"),
+    path("placeholders/geo/<int:seed>.svg", views.geo_placeholder_svg, name="geo_placeholder_svg"),
     path("search", views.search_new, name="search"),
     path("search-new", views.search_new, name="search_new"),
     path("search-old", views.search, name="search_old"),

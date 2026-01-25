@@ -2,9 +2,6 @@
 {% load i18n static %}
 {% load account socialaccount %}
 {% block title %}{% trans "Sign In" %}{% endblock title %}
-{% block extra_head %}
-<link rel="stylesheet" href="{% static "css/account/login.css" %}">
-{% endblock extra_head %}
 {% block content %}
 
 {% comment %} <h1>{% trans "Sign In" %}</h1> {% endcomment %}
@@ -33,19 +30,22 @@ for a {{ site_name }} account and sign in below:{% endblocktrans %}</p>
 <a href="{{ signup_url }}">sign up</a> first.{% endblocktrans %}</p>
 {% endif %}
  {% endcomment %}
-<form class="login" method="POST" action="{% url 'account_login' %}">
+<div class="space-y-3">
+  <h1>{% trans "Login" %}</h1>
+  <p class="text-sm">{% blocktrans %}If you have not created an account yet, then please
+    <a href="{{ signup_url }}">register</a> first.{% endblocktrans %}</p>
+</div>
+
+<form class="auth-form mt-6" method="POST" action="{% url 'account_login' %}">
   {% csrf_token %}
-  <legend>
-    <h1>{% trans "Login" %}</h1>
-    <small>{% blocktrans %}If you have not created an account yet, then please
-      <a href="{{ signup_url }}">register</a> first.{% endblocktrans %}</small>
-  </legend>
   {{ form.as_p }}
   {% if redirect_field_value %}
   <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
   {% endif %}
-  <a class="button secondaryAction" href="{% url 'account_reset_password' %}">{% trans "Forgot Password?" %}</a>
-  <button class="primaryAction" type="submit">{% trans "Login" %}</button>
+  <div class="auth-actions">
+    <a class="btn-secondary" href="{% url 'account_reset_password' %}">{% trans "Forgot Password?" %}</a>
+    <button class="btn-primary" type="submit">{% trans "Login" %}</button>
+  </div>
 </form>
 
 {% endblock %}

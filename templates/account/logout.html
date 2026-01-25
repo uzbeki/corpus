@@ -6,16 +6,20 @@
 
 {% block content %}
 
-<form method="post" action="{% url 'account_logout' %}">
+<div class="space-y-3">
+  <h1>{% trans "Logout" %}</h1>
+  <p class="text-sm">{% trans 'Are you sure you want to logout?' %}</p>
+</div>
+
+<form method="post" action="{% url 'account_logout' %}" class="mt-6">
   {% csrf_token %}
-  <legend>
-    <h1>{% trans "Logout" %}</h1>
-    <small>{% trans 'Are you sure you want to logout?' %}</small>
-  </legend>
   {% if redirect_field_value %}
   <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}"/>
   {% endif %}
-  <button type="submit">{% trans 'Logout' %}</button>
+  <div class="auth-actions">
+    <button type="submit" class="btn-primary">{% trans 'Logout' %}</button>
+    <a class="btn-secondary" href="{% url 'index' %}">{% trans 'Cancel' %}</a>
+  </div>
 </form>
 
 

@@ -8,8 +8,3 @@ register = template.Library()
 def concat(value, arg):
     return f'{str(value)}{str(arg)}'
 
-@stringfilter
-@register.filter(name='random_img')
-def random_img(value):
-    import random
-    return f'{str(value)}{random.randint(1, 4)}.png'

@@ -5,7 +5,11 @@
 {% block head_title %}{% trans "Account Inactive" %}{% endblock %}
 
 {% block content %}
-<h1>{% trans "Account Inactive" %}</h1>
-
-<p>{% trans "This account is inactive." %}</p>
+<div class="space-y-3">
+	<h1>{% trans "Account Inactive" %}</h1>
+	<p class="text-sm">{% trans "This account is inactive." %}</p>
+</div>
+<div class="auth-actions">
+	<a class="btn-secondary" href="{% url 'index' %}">{% trans "Back to home" %}</a>
+</div>
 {% endblock %}

@@ -136,15 +136,37 @@ def word_frequency_data(request: HttpRequest) -> JsonResponse | HttpResponse:
     return json object of word frequency data plus annotated name stats
     """
 
+    def resolve_language():
+        return Article.UZBEK if request.GET.get("language") == "uzbek" else Article.ENGLISH
+
+    def resolve_language_label():
+        return "uzbek" if request.GET.get("language") == "uzbek" else "english"
+
+    def build_names_csv(articles, filename: str) -> HttpResponse:
+        import csv
+
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        writer = csv.writer(response)
+        writer.writerow(["name", "gender", "count"])
+        name_stats = Article.objects.annotated_name_stats(articles)
+        for item in name_stats["frequency"]:
+            writer.writerow([item["name"], item["gender"], item["count"]])
+        return response
+
     # check if "full" parameter is passed
     if request.GET.get("full"):
-        if request.GET.get("language") == "uzbek":
-            # articles = Article.objects.filter(language=Article.UZBEK).create_frequency_csv()
-            articles = Article.objects.create_frequency_csv(language=Article.UZBEK)
-        else:
-            # articles = Article.objects.filter(language=Article.ENGLISH).create_frequency_csv()
-            articles = Article.objects.create_frequency_csv(language=Article.ENGLISH)
-        return articles
+        language_code = resolve_language()
+        language_label = resolve_language_label()
+        dataset = request.GET.get("dataset") or "words"
+        articles = Article.objects.filter(language=language_code)
+
+        if dataset == "names":
+            filename = f"annotated_names_{language_label}.csv"
+            return build_names_csv(articles, filename)
+
+        filename = f"word_frequency_{language_label}.csv"
+        return create_frequency_csv(articles, filename)
 
     else:
 
@@ -302,4 +324,208 @@ def author(request):
     """
     response = FileResponse(open("author.pdf", "rb"), content_type="application/pdf")
     response["Content-Disposition"] = "attachment; filename=NozimjonAtaboyevCV.pdf"
+    return response
+
+
+def geo_placeholder_svg(request, seed: int) -> HttpResponse:
+    """Return a dynamically generated geometric SVG placeholder."""
+
+    import random
+    import math
+
+    rng = random.Random(seed)
+    width = 1200
+    height = 640
+
+    background_a = "#0B1220"
+    background_b = "#111827"
+    accents = ["#22D3EE", "#6366F1", "#A78BFA", "#34D399", "#60A5FA", "#F472B6", "#FB923C", "#F87171"]
+    accent_a = rng.choice(accents)
+    accent_b = rng.choice([c for c in accents if c != accent_a])
+    accent_c = rng.choice([c for c in accents if c not in [accent_a, accent_b]])
+
+    def rand_rect():
+        x = rng.randint(60, width - 400)
+        y = rng.randint(60, height - 280)
+        w = rng.randint(140, 420)
+        h = rng.randint(100, 260)
+        r = rng.randint(8, 48)
+        fill = rng.choice(["#0F172A", "#111827", "#1E293B"])
+        stroke = rng.choice(["#1E293B", "#334155", "none"])
+        stroke_width = rng.randint(1, 3) if stroke != "none" else 0
+        rotation = rng.randint(-15, 15)
+        cx, cy = x + w/2, y + h/2
+        return f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{r}" fill="{fill}" stroke="{stroke}" stroke-width="{stroke_width}" transform="rotate({rotation} {cx} {cy})" />'
+
+    def rand_circle():
+        cx = rng.randint(120, width - 120)
+        cy = rng.randint(120, height - 120)
+        r = rng.randint(50, 180)
+        fill = rng.choice(["#0F172A", "#111827", "#1E293B"])
+        stroke = rng.choice(["#1E293B", "#334155", "none"]) if rng.random() > 0.6 else "none"
+        stroke_width = rng.randint(1, 4) if stroke != "none" else 0
+        return f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="{fill}" stroke="{stroke}" stroke-width="{stroke_width}" />'
+
+    def rand_ellipse():
+        cx = rng.randint(120, width - 120)
+        cy = rng.randint(120, height - 120)
+        rx = rng.randint(80, 200)
+        ry = rng.randint(40, 120)
+        rotation = rng.randint(0, 180)
+        fill = rng.choice(["#0F172A", "#111827", "#1E293B"])
+        return f'<ellipse cx="{cx}" cy="{cy}" rx="{rx}" ry="{ry}" fill="{fill}" transform="rotate({rotation} {cx} {cy})" />'
+
+    def rand_polygon():
+        cx = rng.randint(200, width - 200)
+        cy = rng.randint(120, height - 120)
+        sides = rng.choice([3, 4, 5, 6, 8])
+        size = rng.randint(80, 200)
+        points = []
+        for i in range(sides):
+            angle = (i * 360 / sides + rng.randint(-8, 8)) * math.pi / 180
+            radius = size * rng.uniform(0.85, 1.15)
+            px = int(cx + radius * math.cos(angle))
+            py = int(cy + radius * math.sin(angle))
+            points.append(f"{px},{py}")
+        fill = rng.choice(["#0F172A", "#111827", "#1E293B"])
+        stroke = rng.choice(["#1E293B", "#334155", "none"]) if rng.random() > 0.5 else "none"
+        stroke_width = rng.randint(1, 3) if stroke != "none" else 0
+        return f'<polygon points="{" ".join(points)}" fill="{fill}" stroke="{stroke}" stroke-width="{stroke_width}" />'
+
+    def rand_star():
+        cx = rng.randint(200, width - 200)
+        cy = rng.randint(120, height - 120)
+        outer_r = rng.randint(80, 150)
+        inner_r = rng.randint(40, 80)
+        points_count = rng.choice([5, 6, 7, 8])
+        points = []
+        for i in range(points_count * 2):
+            angle = (i * 180 / points_count) * math.pi / 180
+            radius = outer_r if i % 2 == 0 else inner_r
+            px = int(cx + radius * math.cos(angle - math.pi/2))
+            py = int(cy + radius * math.sin(angle - math.pi/2))
+            points.append(f"{px},{py}")
+        fill = rng.choice(["#0F172A", "#111827", "#1E293B"])
+        return f'<polygon points="{" ".join(points)}" fill="{fill}" />'
+
+    def rand_triangle():
+        x1 = rng.randint(100, width - 100)
+        y1 = rng.randint(80, height - 80)
+        x2 = x1 + rng.randint(-150, 150)
+        y2 = y1 + rng.randint(120, 250)
+        x3 = x1 + rng.randint(-150, 150)
+        y3 = y1 + rng.randint(120, 250)
+        fill = rng.choice(["#0F172A", "#111827", "#1E293B"])
+        stroke = rng.choice(["#1E293B", "none"]) if rng.random() > 0.6 else "none"
+        stroke_width = 2 if stroke != "none" else 0
+        return f'<polygon points="{x1},{y1} {x2},{y2} {x3},{y3}" fill="{fill}" stroke="{stroke}" stroke-width="{stroke_width}" />'
+
+    def rand_bubble():
+        cx = rng.randint(100, width - 100)
+        cy = rng.randint(100, height - 100)
+        r = rng.randint(30, 120)
+        gradient_id = f"bubble_{cx}_{cy}"
+        bubble_accent = rng.choice([accent_a, accent_b, accent_c])
+        opacity = rng.uniform(0.15, 0.35)
+        
+        gradient_def = f'''<radialGradient id="{gradient_id}" cx="0.3" cy="0.3" r="0.8">
+            <stop offset="0" stop-color="{bubble_accent}" stop-opacity="{opacity * 1.5}"/>
+            <stop offset="0.5" stop-color="{bubble_accent}" stop-opacity="{opacity}"/>
+            <stop offset="1" stop-color="{bubble_accent}" stop-opacity="0"/>
+        </radialGradient>'''
+        
+        bubble = f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="url(#{gradient_id})" />'
+        
+        # Add subtle highlight
+        highlight_cx = cx - r * 0.3
+        highlight_cy = cy - r * 0.3
+        highlight_r = r * 0.25
+        highlight = f'<circle cx="{highlight_cx}" cy="{highlight_cy}" r="{highlight_r}" fill="white" opacity="0.2"/>'
+        
+        return gradient_def, bubble + highlight
+
+    def rand_bezier():
+        x1 = rng.randint(100, width - 100)
+        y1 = rng.randint(100, height - 100)
+        cx1 = rng.randint(100, width - 100)
+        cy1 = rng.randint(100, height - 100)
+        cx2 = rng.randint(100, width - 100)
+        cy2 = rng.randint(100, height - 100)
+        x2 = rng.randint(100, width - 100)
+        y2 = rng.randint(100, height - 100)
+        stroke = rng.choice([accent_a, accent_b, accent_c])
+        stroke_width = rng.randint(2, 4)
+        opacity = rng.uniform(0.2, 0.4)
+        return f'<path d="M {x1} {y1} C {cx1} {cy1}, {cx2} {cy2}, {x2} {y2}" stroke="{stroke}" stroke-width="{stroke_width}" fill="none" opacity="{opacity}" />'
+
+    # Create layers of shapes with varying counts
+    layer_1 = [rng.choice([rand_rect, rand_circle, rand_polygon])() for _ in range(rng.randint(2, 3))]
+    layer_2 = [rng.choice([rand_ellipse, rand_triangle, rand_star])() for _ in range(rng.randint(2, 3))]
+    layer_3 = [rng.choice([rand_circle, rand_polygon])() for _ in range(rng.randint(1, 2))]
+    
+    # Create bubbles
+    bubble_gradients = []
+    bubbles = []
+    for _ in range(rng.randint(0, 5)):
+        grad, bub = rand_bubble()
+        bubble_gradients.append(grad)
+        bubbles.append(bub)
+    
+    # Reduced accent lines
+    accent_lines = [rand_bezier() for _ in range(rng.randint(1, 2))]
+
+    # Create dynamic accent paths
+    def create_accent_path():
+        start_x = rng.randint(100, 300)
+        start_y = rng.randint(height - 200, height - 80)
+        mid_x = width // 2 + rng.randint(-150, 150)
+        mid_y = rng.randint(180, 320)
+        end_x = rng.randint(width - 300, width - 100)
+        end_y = rng.randint(height - 200, height - 80)
+        return f'M{start_x} {start_y} Q{mid_x} {mid_y} {end_x} {end_y}'
+
+    accent_path_1 = create_accent_path()
+    accent_path_2 = create_accent_path()
+
+    svg = f"""<svg width="{width}" height="{height}" viewBox="0 0 {width} {height}" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="bg" x1="0" y1="0" x2="{width}" y2="{height}" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="{background_a}"/>
+            <stop offset="1" stop-color="{background_b}"/>
+        </linearGradient>
+        <linearGradient id="accent" x1="0" y1="0" x2="{width}" y2="0" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="{accent_a}"/>
+            <stop offset="0.5" stop-color="{accent_b}"/>
+            <stop offset="1" stop-color="{accent_c}"/>
+        </linearGradient>
+        <radialGradient id="radial" cx="0.5" cy="0.5" r="0.5">
+            <stop offset="0" stop-color="{accent_a}" stop-opacity="0.3"/>
+            <stop offset="1" stop-color="{accent_b}" stop-opacity="0"/>
+        </radialGradient>
+        {"".join(bubble_gradients)}
+    </defs>
+    <rect width="{width}" height="{height}" fill="url(#bg)"/>
+    <g opacity="0.28">
+        {"".join(layer_1)}
+    </g>
+    <g opacity="0.24">
+        {"".join(layer_2)}
+    </g>
+    <g opacity="0.18">
+        {"".join(layer_3)}
+    </g>
+    <g>
+        {"".join(bubbles)}
+    </g>
+    <g>
+        {"".join(accent_lines)}
+    </g>
+    <path d="{accent_path_1}" stroke="url(#accent)" stroke-width="{rng.randint(4, 7)}" opacity="0.6"/>
+    <path d="{accent_path_2}" stroke="{accent_a}" stroke-width="{rng.randint(2, 4)}" opacity="0.35"/>
+    <circle cx="{rng.randint(200, width-200)}" cy="{rng.randint(150, height-150)}" r="{rng.randint(200, 350)}" fill="url(#radial)" opacity="0.4"/>
+</svg>"""
+
+    response = HttpResponse(svg, content_type="image/svg+xml")
+    response["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response["Pragma"] = "no-cache"
     return response

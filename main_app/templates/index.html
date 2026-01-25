@@ -2,64 +2,88 @@
 {% load static humanize custom_tags %}
 {% block extra_head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<link rel="stylesheet" href="{% static "css/index.css" %}">
 {% endblock extra_head %}
 
 {% block main %}
-    <section class="banner">
-        <div class="stats">
-            <div class="stat">
-                <h4>{{ newspapers|length }}</h4>
-                <p>Newspapers</p>
-            </div>
-            <div class="stat">
-                <h4>{{ article_count|intcomma }}</h4>
-                <p>Articles</p>
-            </div>
-            <div class="stat">
-                <h4>{{ word_count|intcomma }}</h4>
-                <p>Words (non-unique, est.)</p>
-            </div>
-            <div class="stat">
-                <h4>{{ name_counts.total|intcomma }}</h4>
-                <p>Annotated names (non-unique)</p>
-            </div>
-            <div class="stat">
-                <h4>{{ text_stats.ttr|floatformat:3 }}</h4>
-                <p>TTR (unique / total)</p>
-            </div>
-            <div class="stat">
-                <h4>{{ text_stats.hapax_count|intcomma }}</h4>
-                <p>Hapax (appear once)</p>
+    <section class="space-y-10">
+        <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-soft">
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+                    <p class="text-xs uppercase tracking-[0.3em] text-slate-400">Newspapers</p>
+                    <h4 class="stat-count mt-3 text-2xl font-semibold text-white" data-count="{{ newspapers|length }}" data-format="int">{{ newspapers|length }}</h4>
+                </div>
+                <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+                    <p class="text-xs uppercase tracking-[0.3em] text-slate-400">Articles</p>
+                    <h4 class="stat-count mt-3 text-2xl font-semibold text-white" data-count="{{ article_count }}" data-format="int">{{ article_count|intcomma }}</h4>
+                </div>
+                <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+                    <p class="text-xs uppercase tracking-[0.3em] text-slate-400">Words (non-unique)</p>
+                    <h4 class="stat-count mt-3 text-2xl font-semibold text-white" data-count="{{ word_count }}" data-format="int">{{ word_count|intcomma }}</h4>
+                </div>
+                <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+                    <p class="text-xs uppercase tracking-[0.3em] text-slate-400">Annotated names</p>
+                    <h4 class="stat-count mt-3 text-2xl font-semibold text-white" data-count="{{ name_counts.total }}" data-format="int">{{ name_counts.total|intcomma }}</h4>
+                </div>
+                <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+                    <p class="text-xs uppercase tracking-[0.3em] text-slate-400">TTR</p>
+                    <h4 class="stat-count mt-3 text-2xl font-semibold text-white" data-count="{{ text_stats.ttr }}" data-format="float:3">{{ text_stats.ttr|floatformat:3 }}</h4>
+                </div>
+                <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+                    <p class="text-xs uppercase tracking-[0.3em] text-slate-400">Hapax</p>
+                    <h4 class="stat-count mt-3 text-2xl font-semibold text-white" data-count="{{ text_stats.hapax_count }}" data-format="int">{{ text_stats.hapax_count|intcomma }}</h4>
+                </div>
             </div>
         </div>
-        <div id="chartBox">
-            <div class="chartLabels">
-                <div class="toggleGroup" aria-label="Select language for the chart">
-                    <span class="toggleLabel">Language</span>
-                    <div class="radioButton">
-                        <input type="radio" id="english" name="language" value="english" checked>
-                        <label for="english">English</label>
+        <div class="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
+            <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-soft">
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                        <p class="text-xs uppercase tracking-[0.3em] text-slate-400">Insight</p>
+                        <h2 class="mt-2 text-xl font-semibold text-white">Top frequency overview</h2>
                     </div>
-                    <div class="radioButton">
-                        <input type="radio" id="uzbek" name="language" value="uzbek">
-                        <label for="uzbek">Uzbek</label>
+                    <div class="flex flex-wrap items-center gap-4">
+                        <div class="flex items-center gap-2 rounded-full border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm">
+                            <span class="text-xs uppercase tracking-[0.2em] text-slate-500">Language</span>
+                            <label class="flex items-center gap-1 text-slate-200">
+                                <input type="radio" id="english" name="language" value="english" checked class="accent-brand-500">
+                                English
+                            </label>
+                            <label class="flex items-center gap-1 text-slate-200">
+                                <input type="radio" id="uzbek" name="language" value="uzbek" class="accent-brand-500">
+                                Uzbek
+                            </label>
+                        </div>
+                        <div class="flex items-center gap-2 rounded-full border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm">
+                            <span class="text-xs uppercase tracking-[0.2em] text-slate-500">Dataset</span>
+                            <label class="flex items-center gap-1 text-slate-200">
+                                <input type="radio" id="dataset-words" name="dataset" value="words" checked class="accent-brand-500">
+                                Words
+                            </label>
+                            <label class="flex items-center gap-1 text-slate-200">
+                                <input type="radio" id="dataset-names" name="dataset" value="names" class="accent-brand-500">
+                                Names
+                            </label>
+                        </div>
                     </div>
                 </div>
-                <div class="toggleGroup" aria-label="Select metric for the chart">
-                    <span class="toggleLabel">Dataset</span>
-                    <div class="radioButton">
-                        <input type="radio" id="dataset-words" name="dataset" value="words" checked>
-                        <label for="dataset-words">Words</label>
-                    </div>
-                    <div class="radioButton">
-                        <input type="radio" id="dataset-names" name="dataset" value="names">
-                        <label for="dataset-names">Names</label>
-                    </div>
+                <div class="mt-6">
+                    <canvas id="word-frequency-chart" class="max-h-[420px]"></canvas>
+                </div>
+                <div id="download" class="mt-6 flex items-center justify-between">
+                    <p class="text-sm text-slate-400">CSV export available for the selected dataset.</p>
+                    <button type="button" class="rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-soft transition hover:bg-brand-500">download full dataset</button>
                 </div>
             </div>
-            <canvas id="word-frequency-chart"></canvas>
-            <div id="download"><button type="button">download full frequency data</button></div>
+            <div class="rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900/80 to-slate-950/80 p-6 shadow-soft">
+                <p class="text-xs uppercase tracking-[0.3em] text-slate-400">Explore</p>
+                <h3 class="mt-2 text-xl font-semibold text-white">Browse by year</h3>
+                <p class="mt-2 text-sm text-slate-400">Jump into a specific year to explore article stats, lexical frequency, and annotated names.</p>
+                <div class="mt-4 flex flex-wrap gap-2">
+                    {% for year in published_years %}
+                        <a href="{% url 'year_archive' year=year %}" class="rounded-full border border-slate-700 px-3 py-1 text-sm text-slate-200 transition hover:border-brand-500 hover:text-white">{{ year }}</a>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
         <script>
         const url = "{% url 'word_frequency_data' %}";
@@ -153,11 +177,11 @@
         };
 
         const updateDownloadState = () => {
-            const isWords = currentMetric === 'words';
-            fullDownloadBtn.disabled = !isWords;
-            fullDownloadBtn.textContent = isWords
-                ? 'download full frequency data'
-                : 'download available for words only';
+            const label = currentMetric === 'names'
+                ? 'download full annotated names'
+                : 'download full word frequency';
+            fullDownloadBtn.disabled = false;
+            fullDownloadBtn.textContent = label;
         };
 
         const updateChart = () => {
@@ -197,11 +221,8 @@
             })
             .then(() => {
                 fullDownloadBtn.addEventListener('click', () => {
-                    if (currentMetric !== 'words') {
-                        return;
-                    }
-                    const checkedInput = document.querySelector('#chartBox input[name="language"]:checked');
-                    const downloadUrl = "{% url 'word_frequency_data' %}?full=1&language=" + checkedInput.value;
+                    const downloadUrl = "{% url 'word_frequency_data' %}?full=1&language="
+                        + currentLanguage + "&dataset=" + currentMetric;
                     fetch(downloadUrl)
                         .then(response => response.blob())
                         .then(blob => {
@@ -210,7 +231,8 @@
                             const a = document.createElement('a');
                             a.style.display = 'none';
                             a.href = blobUrl;
-                            a.download = `word_frequency_${checkedInput.value}_${Date.now()}.csv`;
+                            const label = currentMetric === 'names' ? 'annotated_names' : 'word_frequency';
+                            a.download = `${label}_${currentLanguage}_${Date.now()}.csv`;
                             document.body.appendChild(a);
                             a.click();
                             window.URL.revokeObjectURL(blobUrl);
@@ -218,57 +240,107 @@
                         .catch(() => alert('oh no!'));
                 });
             });
+
+        const statCounters = Array.from(document.querySelectorAll('.stat-count'));
+        const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        const formatNumber = (value, format) => {
+            if (format && format.startsWith('float:')) {
+                const decimals = parseInt(format.split(':')[1], 10) || 0;
+                return value.toFixed(decimals);
+            }
+            return Math.round(value).toLocaleString();
+        };
+
+        const animateCounter = (el) => {
+            const raw = parseFloat(el.dataset.count || '0');
+            if (!Number.isFinite(raw)) return;
+
+            const format = el.dataset.format || 'int';
+            if (prefersReducedMotion) {
+                el.textContent = formatNumber(raw, format);
+                return;
+            }
+
+            const duration = 2000;
+            const start = performance.now();
+            const startValue = 0;
+            const delta = raw - startValue;
+
+            const tick = (now) => {
+                const progress = Math.min((now - start) / duration, 1);
+                const eased = progress < 0.5
+                    ? 2 * progress * progress
+                    : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+                const currentValue = startValue + delta * eased;
+                el.textContent = formatNumber(currentValue, format);
+                if (progress < 1) {
+                    requestAnimationFrame(tick);
+                }
+            };
+
+            requestAnimationFrame(tick);
+        };
+
+        if ('IntersectionObserver' in window) {
+            const observer = new IntersectionObserver((entries, obs) => {
+                entries.forEach(entry => {
+                    if (!entry.isIntersecting) return;
+                    animateCounter(entry.target);
+                    obs.unobserve(entry.target);
+                });
+            }, { threshold: 0.4 });
+
+            statCounters.forEach(el => observer.observe(el));
+        } else {
+            statCounters.forEach(animateCounter);
+        }
         </script>
 
     </section>
-   {% for newspaper in newspapers %}
-   <div class="newspaper">
-        <h2 class="newspaper_title">
-            <a href="{% url 'newspaper_detail' newspaper_id=newspaper.id %}">{{ newspaper.title }}</a>
-            {% if newspaper.link %}
-            <span> · <a class="source-link" href="{{ newspaper.link }}" target="_blank" rel="noopener noreferrer">🔗 Source</a></span>
-            {% endif %}
-        </h2>
-        <ul class="featured">
-            {% for article in newspaper.article_set.random3 %}
-            <li>
-                {% if forloop.first or forloop.counter == 2%}
-                <div class="thumbnail">
-                    {% with url="/images/article"|random_img %}
-                    <img src="{% static url %}" alt="{{article.title}}" >
-                    {% endwith %}
-                </div>
+   <section class="mt-12 space-y-6">
+        <div class="flex items-center justify-between">
+            <h2 class="text-2xl font-semibold text-white">Featured newspapers</h2>
+            <p class="text-sm text-slate-400">Highlights from each publication.</p>
+        </div>
+        {% for newspaper in newspapers %}
+        <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-soft">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <h3 class="text-xl font-semibold text-white">
+                    <a class="transition hover:text-brand-400" href="{% url 'newspaper_detail' newspaper_id=newspaper.id %}">{{ newspaper.title }}</a>
+                </h3>
+                {% if newspaper.link %}
+                <a class="rounded-full border border-slate-700 px-3 py-1 text-sm text-slate-200 transition hover:border-brand-500 hover:text-white" href="{{ newspaper.link }}" target="_blank" rel="noopener noreferrer">🔗 Source</a>
                 {% endif %}
-                <div class="content">
-                    <h3>
-                        <a title="Go to full article page" href="{% url 'article_detail' article_id=article.pk %}" rel="noopener noreferrer">{{ article.title }}</a>
-                        <div>{{ article.get_language_display }}</div>
-                    </h3>
-                    {% if forloop.first %}
-                    <p data-gender-annotations>{{ article.content|truncatewords:50 }}</p>
-                    {% else %}
-                    <p data-gender-annotations>{{ article.content|truncatewords:30 }}</p>
-                    {% endif %}
-                    <div>
-                        <span><i> By {{ article.author|truncatewords:2 }}</i>, </span>
-                        <span>in <a href="{% url 'year_archive' year=article.published_year %}" class="year">{{ article.published_year }}</a></span>
-                        {% if article.link %}
-                        <span> · <a class="source-link" href="{{ article.link }}" target="_blank" rel="noopener noreferrer">🔗 Source</a></span>
+            </div>
+            <div class="mt-6 grid gap-4 md:grid-cols-3">
+                {% for article in newspaper.article_set.random3 %}
+                <article class="flex h-full flex-col rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+                    <div class="mb-4 overflow-hidden rounded-xl">
+                        <img src="{% url 'geo_placeholder_svg' seed=article.pk %}" alt="{{ article.title }}" class="h-40 w-full object-cover">
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="text-lg font-semibold text-white">
+                            <a title="Go to full article page" href="{% url 'article_detail' article_id=article.pk %}" rel="noopener noreferrer" class="transition hover:text-brand-400">{{ article.title }}</a>
+                        </h4>
+                        <p class="mt-1 text-xs uppercase tracking-[0.2em] text-slate-500">{{ article.get_language_display }}</p>
+                        {% if forloop.first %}
+                        <p class="mt-3 text-sm text-slate-300" data-gender-annotations>{{ article.content|truncatewords:50 }}</p>
+                        {% else %}
+                        <p class="mt-3 text-sm text-slate-300" data-gender-annotations>{{ article.content|truncatewords:30 }}</p>
                         {% endif %}
                     </div>
-                </div>
-            </li>
-            {% endfor %}
-        </ul>
-    </div>
-
-    {% endfor %}
-    <div id="years">
-        <h2>Statistics by year</h2>
-        <ul>
-            {% for year in published_years %}
-                <li><a href="{% url 'year_archive' year=year %}" class="year">{{ year }}</a></li>
-            {% endfor %}
-        </ul>
-    </div>
+                    <div class="mt-4 text-xs text-slate-400">
+                        <span><i> By {{ article.author|truncatewords:2 }}</i>, </span>
+                        <span>in <a href="{% url 'year_archive' year=article.published_year %}" class="text-slate-200 transition hover:text-white">{{ article.published_year }}</a></span>
+                        {% if article.link %}
+                        <span> · <a class="text-slate-200 transition hover:text-white" href="{{ article.link }}" target="_blank" rel="noopener noreferrer">🔗 Source</a></span>
+                        {% endif %}
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </section>
 {% endblock main %}

@@ -7,14 +7,67 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <title>{% block title %}Home{% endblock title %} | zakhri-corpus.com</title>
-    
-    <link rel="stylesheet" href="{% static 'css/base.css' %}">
-    <link rel="stylesheet" href="{% static 'css/form.css' %}">
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style type="text/tailwindcss">
+        @theme {
+            --font-sans: 'Inter', ui-sans-serif, system-ui;
+            --color-brand-50: #eff6ff;
+            --color-brand-100: #dbeafe;
+            --color-brand-200: #bfdbfe;
+            --color-brand-300: #93c5fd;
+            --color-brand-400: #60a5fa;
+            --color-brand-500: #3b82f6;
+            --color-brand-600: #2563eb;
+            --color-brand-700: #1d4ed8;
+            --color-brand-800: #1e40af;
+            --color-brand-900: #1e3a8a;
+            --shadow-soft: 0 10px 30px -15px rgba(15, 23, 42, 0.3);
+        }
+    </style>
+    <style>
+        body { font-family: 'Inter', ui-sans-serif, system-ui; }
+        ::selection { background: rgba(59,130,246,.25); }
+        a, button { transition: color .2s ease, background-color .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease; }
+        a:hover, button:hover { transform: translateY(-1px); }
+        a:active, button:active { transform: translateY(0); }
+
+        .male-name {
+            background: rgba(56, 189, 248, 0.22);
+            color: #e2f5ff;
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            padding: 0 0.2rem;
+            border-radius: 0.35rem;
+            font-weight: 600;
+        }
+        .female-name {
+            background: rgba(244, 114, 182, 0.2);
+            color: #ffe4f2;
+            border: 1px solid rgba(244, 114, 182, 0.35);
+            padding: 0 0.2rem;
+            border-radius: 0.35rem;
+            font-weight: 600;
+        }
+
+        .filter-panel {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height .3s ease, opacity .3s ease;
+        }
+        .filter-panel.is-open {
+            max-height: 500px;
+            opacity: 1;
+        }
+    </style>
     {% block extra_head %}{% endblock extra_head %}
 </head>
-<body>
+<body class="min-h-screen bg-slate-950 text-slate-100">
 {% block header %}{% include 'header.html' %}{% endblock header %}
-<main>{% block main %}{% endblock main %}</main>
+<main class="mx-auto w-full max-w-6xl px-4 pb-16 pt-6 sm:px-6 lg:px-8">{% block main %}{% endblock main %}</main>
 {% block footer %}{% include "footer.html" %}
 {% endblock footer %}
 

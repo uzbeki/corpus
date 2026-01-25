@@ -3,65 +3,81 @@
 {% load static humanize %}
 {% block extra_head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<link rel="stylesheet" href="{% static "css/newspaper_details.css" %}">
-<link rel="stylesheet" href="{% static "css/article_details.css" %}">
 {% endblock extra_head %}
 
 {% block main %}
-<article>
-    <h1>{{ article.title }}</h1>
-    <div class="meta">
-        <span><i> By {{ article.author|truncatewords:5 }}</i>, </span>
-        <span>in <a href="{% url 'year_archive' year=article.published_year %}" class="year">{{ article.published_year }}</a></span>
-        {% if article.link %}
-        <span> · <a class="source-link" href="{{ article.link }}" target="_blank" rel="noopener noreferrer">🔗 Source</a></span>
-        {% endif %}
-        {% if user.is_staff %}
-        <span> · <a class="source-link" href="{% url 'admin:main_app_article_change' article.id %}" target="_blank" rel="noopener noreferrer">✏️ Edit in admin</a></span>
-        {% endif %}
-    </div>
-    <div class="name-counts" id="gender-name-counts"></div>
-    <div class="content" data-gender-annotations data-gender-count-target="#gender-name-counts">{{ article.content|linebreaks }}</div>
-</article>
-{% comment %} <pre>{{word_frequency}}</pre> {% endcomment %}
-<section class="banner">
-    <div class="stats">
-        <div class="stat">
-            <h4>{{ word_count|intcomma }}</h4>
-            <p>Total words (non-unique)</p>
-        </div>
-        <div class="stat">
-            <h4>{{ word_frequency|length }}</h4>
-            <p>Unique words (types)</p>
-        </div>
-        <div class="stat">
-            <h4>{{ name_stats.counts.male|add:name_stats.counts.female }}</h4>
-            <p>Annotated names (non-unique)</p>
-        </div>
-        <div class="stat">
-            <h4>{{ text_stats.ttr|floatformat:3 }}</h4>
-            <p>TTR (unique / total)</p>
-        </div>
-        <div class="stat">
-            <h4>{{ text_stats.hapax_count|intcomma }}</h4>
-            <p>Hapax (appear once)</p>
-        </div>
-    </div>
-    <div id="chartBox">
-        <div class="chartLabels">
-            <div class="toggleGroup" aria-label="Select metric for the chart">
-                <span class="toggleLabel">Dataset</span>
-                <div class="radioButton">
-                    <input type="radio" id="dataset-words" name="dataset" value="words" checked>
-                    <label for="dataset-words">Words</label>
-                </div>
-                <div class="radioButton">
-                    <input type="radio" id="dataset-names" name="dataset" value="names">
-                    <label for="dataset-names">Names</label>
-                </div>
+<article class="space-y-6">
+    <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-soft">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <div>
+                <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Article</p>
+                <h1 class="mt-2 text-3xl font-semibold text-white">{{ article.title }}</h1>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 text-sm">
+                {% if article.link %}
+                <a class="rounded-full border border-slate-700 px-3 py-1 text-slate-200 transition hover:border-brand-500 hover:text-white" href="{{ article.link }}" target="_blank" rel="noopener noreferrer">🔗 Source</a>
+                {% endif %}
+                {% if user.is_staff %}
+                <a class="rounded-full bg-slate-800 px-3 py-1 text-slate-200 transition hover:bg-slate-700" href="{% url 'admin:main_app_article_change' article.id %}" target="_blank" rel="noopener noreferrer">✏️ Edit in admin</a>
+                {% endif %}
             </div>
         </div>
-        <canvas id="word-frequency-chart"></canvas>
+        <div class="mt-4 flex flex-wrap items-center gap-3 text-sm text-slate-400">
+            <span><i> By {{ article.author|truncatewords:5 }}</i></span>
+            <span>•</span>
+            <span>in <a href="{% url 'year_archive' year=article.published_year %}" class="text-slate-200 transition hover:text-white">{{ article.published_year }}</a></span>
+        </div>
+    </div>
+
+    <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-soft">
+        <div class="name-counts mb-4 text-sm text-slate-400" id="gender-name-counts"></div>
+        <div class="space-y-4 text-base leading-7 text-slate-200" data-gender-annotations data-gender-count-target="#gender-name-counts">{{ article.content|linebreaks }}</div>
+    </div>
+{% comment %} <pre>{{word_frequency}}</pre> {% endcomment %}
+<section class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-soft">
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+            <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Total words</p>
+            <h4 class="mt-3 text-2xl font-semibold text-white">{{ word_count|intcomma }}</h4>
+        </div>
+        <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+            <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Unique words</p>
+            <h4 class="mt-3 text-2xl font-semibold text-white">{{ word_frequency|length }}</h4>
+        </div>
+        <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+            <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Annotated names</p>
+            <h4 class="mt-3 text-2xl font-semibold text-white">{{ name_stats.counts.male|add:name_stats.counts.female }}</h4>
+        </div>
+        <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+            <p class="text-xs uppercase tracking-[0.3em] text-slate-500">TTR</p>
+            <h4 class="mt-3 text-2xl font-semibold text-white">{{ text_stats.ttr|floatformat:3 }}</h4>
+        </div>
+        <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+            <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Hapax</p>
+            <h4 class="mt-3 text-2xl font-semibold text-white">{{ text_stats.hapax_count|intcomma }}</h4>
+        </div>
+    </div>
+    <div class="mt-8">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <div>
+                <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Distribution</p>
+                <h3 class="mt-2 text-lg font-semibold text-white">Top frequency chart</h3>
+            </div>
+            <div class="flex items-center gap-3 rounded-full border border-slate-700 bg-slate-950/70 px-4 py-2 text-sm">
+                <span class="text-xs uppercase tracking-[0.2em] text-slate-500">Dataset</span>
+                <label class="flex items-center gap-1 text-slate-200">
+                    <input type="radio" id="dataset-words" name="dataset" value="words" checked class="accent-brand-500">
+                    Words
+                </label>
+                <label class="flex items-center gap-1 text-slate-200">
+                    <input type="radio" id="dataset-names" name="dataset" value="names" class="accent-brand-500">
+                    Names
+                </label>
+            </div>
+        </div>
+        <div class="mt-6">
+            <canvas id="word-frequency-chart" class="max-h-[420px]"></canvas>
+        </div>
     </div>
     <script>
     const url = "{% url 'article_frequency' article_id=article.id %}";

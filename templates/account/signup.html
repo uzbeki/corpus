@@ -1,10 +1,5 @@
 {% extends "account/base.html" %}
 {% load i18n static %}
-{% block extra_head %}
-<link rel="stylesheet" href="{% static "css/account/register.css" %}">
-{% endblock extra_head %}
-
-
 {% block head_title %}{% trans "Signup" %}{% endblock %}
 
 {% block content %}
@@ -12,17 +7,20 @@
 
 {% comment %} <p>{% blocktrans %}Already have an account? Then please <a href="{{ login_url }}">sign in</a>.{% endblocktrans %}</p> {% endcomment %}
 
-<form class="signup" id="signup_form" method="post" action="{% url 'account_signup' %}">
-  <legend>
-    <h1>{% trans "Register" %}</h1>
-    <small>{% blocktrans %}Already have an account? Then please <a href="{{ login_url }}">login</a>.{% endblocktrans %}</small>
-  </legend>
+<div class="space-y-3">
+  <h1>{% trans "Register" %}</h1>
+  <p class="text-sm">{% blocktrans %}Already have an account? Then please <a href="{{ login_url }}">login</a>.{% endblocktrans %}</p>
+</div>
+
+<form class="auth-form mt-6" id="signup_form" method="post" action="{% url 'account_signup' %}">
   {% csrf_token %}
   {{ form.as_p }}
   {% if redirect_field_value %}
   <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
   {% endif %}
-  <button type="submit">{% trans "Register" %} &raquo;</button>
+  <div class="auth-actions">
+    <button type="submit" class="btn-primary">{% trans "Register" %}</button>
+  </div>
 </form>
 
 {% endblock %}
