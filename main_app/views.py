@@ -70,7 +70,7 @@ def search_new(request: HttpRequest):
     grouped: dict[int, dict] = {}
     for item in results["results"]:
         article = item["article"]
-        year_val = article.published_year.year if article.published_year else 0
+        year_val = article.published_year or 0
 
         bucket = grouped.setdefault(
             year_val, {"year": year_val, "total_frequency": 0, "articles": {}}
@@ -214,12 +214,8 @@ def year_archive(request, year: int):
 
     # get english and uzbek articles separately
 
-    english = Article.objects.filter(
-        language=Article.ENGLISH, published_year=f"{year}-01-01"
-    )
-    uzbek = Article.objects.filter(
-        language=Article.UZBEK, published_year=f"{year}-01-01"
-    )
+    english = Article.objects.filter(language=Article.ENGLISH, published_year=year)
+    uzbek = Article.objects.filter(language=Article.UZBEK, published_year=year)
 
     english_stats = aggregate_word_stats(english)
     uzbek_stats = aggregate_word_stats(uzbek)
@@ -249,7 +245,7 @@ def year_archive_download(request, year: int, language: str):
     Year archive view
     """
     # get articles
-    articles = Article.objects.filter(published_year=f"{year}-01-01", language=language)
+    articles = Article.objects.filter(published_year=year, language=language)
     csv_response = create_frequency_csv(articles, f"{year}_{language}_archieve.csv")
 
     # render year archive

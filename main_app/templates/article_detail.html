@@ -12,7 +12,10 @@
     <h1>{{ article.title }}</h1>
     <div class="meta">
         <span><i> By {{ article.author|truncatewords:2 }}</i>, </span>
-        <span>in <a href="{% url 'year_archive' year=article.published_year.year %}" class="year">{{article.published_year.year}}</a></span>
+        <span>in <a href="{% url 'year_archive' year=article.published_year %}" class="year">{{ article.published_year }}</a></span>
+        {% if article.link %}
+        <span> · <a class="source-link" href="{{ article.link }}" target="_blank" rel="noopener noreferrer">🔗 Source</a></span>
+        {% endif %}
     </div>
     <div class="name-counts" id="gender-name-counts"></div>
     <div class="content" data-gender-annotations data-gender-count-target="#gender-name-counts">{{ article.content|linebreaks }}</div>

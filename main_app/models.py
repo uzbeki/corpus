@@ -4,6 +4,7 @@ import re
 from io import TextIOWrapper
 
 from django.core.files.uploadedfile import UploadedFile
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import Count
 from django.db.models.query import QuerySet
@@ -63,7 +64,12 @@ class Newspaper(models.Model):
 
     title = models.CharField(max_length=200, unique=True)
     link = models.URLField(null=True, blank=True)
-    published_year = models.DateField(blank=True, null=True, default=None)
+    published_year = models.PositiveSmallIntegerField(
+        blank=True,
+        null=True,
+        default=None,
+        validators=[MinValueValidator(1), MaxValueValidator(9999)],
+    )
     issue_number = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
@@ -94,7 +100,7 @@ class ArticleQuerySet(QuerySet):
         if year is not None:
             try:
                 year_int = int(year)
-                qs = qs.filter(published_year__year=year_int)
+                qs = qs.filter(published_year=year_int)
             except (TypeError, ValueError):
                 pass
 
@@ -118,7 +124,7 @@ class ArticleManager(models.Manager["Article"]):
         return ArticleQuerySet(self.model, using=self._db)
 
     def search(
-        self, query: str, language: int, year: str | None = None
+        self, query: str, language: int, year: int | str | None = None
     ) -> SearchResult:
         """
         Search articles for the given query string and return a dictionary of search results,
@@ -176,13 +182,19 @@ class ArticleManager(models.Manager["Article"]):
             # print(row,"\n")
             try:
                 newspaper, _ = Newspaper.objects.get_or_create(title=row["newspaper"])
+                raw_year = row.get("published_year")
+                try:
+                    published_year = int(raw_year) if raw_year not in ("", None) else None
+                except (TypeError, ValueError):
+                    published_year = None
+
                 articles.append(
                     Article(
                         title=row["title"],
                         author=row["author"],
                         newspaper=newspaper,
                         content=row["content"],
-                        published_year=f"{row['published_year']}-01-01",
+                        published_year=published_year,
                         language=1 if row["language"].capitalize() == "English" else 2,
                         # issue_number=row["issue_number"],
                     )
@@ -325,7 +337,11 @@ class Article(models.Model):
     language = models.PositiveSmallIntegerField(
         choices=Language.choices, default=Language.UZBEK
     )
-    published_year = models.DateField(null=True, default=None)
+    published_year = models.PositiveSmallIntegerField(
+        null=True,
+        default=None,
+        validators=[MinValueValidator(1), MaxValueValidator(9999)],
+    )
     link = models.URLField(null=True, blank=True, default=None)
 
     objects = ArticleManager()

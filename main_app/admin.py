@@ -35,7 +35,6 @@ class ArticleAdmin(admin.ModelAdmin):
         "published_year",
         "newspaper",
     )
-    date_hierarchy = "published_year"
     ordering = ("-published_year", "newspaper__title", "title")
     autocomplete_fields = ("newspaper",)
     list_per_page = 25

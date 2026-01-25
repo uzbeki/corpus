@@ -8,7 +8,12 @@
 
 {% block main %}
 {% comment %} article detail page {% endcomment %}
-<h1>{{ newspaper.title }}</h1>
+<h1>
+    {{ newspaper.title }}
+    {% if newspaper.link %}
+    <small> · <a class="source-link" href="{{ newspaper.link }}" target="_blank" rel="noopener noreferrer">🔗 Source</a></small>
+    {% endif %}
+</h1>
 <section class="banner">
     <div class="stats">
         <div class="stat">
@@ -172,7 +177,7 @@
         {% comment %} <a title="Go to full article page" href="{% url 'article_detail' article_id=article.pk %}" rel="noopener noreferrer"><h2>{{ article.title }} 🔗</h2></a>
 
         <p>{{ article.author }}</p>
-        <p>{{ article.published_year|date:"Y" }}</p>
+        <p>{{ article.published_year }}</p>
         <p>{{ article.get_language_display }}</p> {% endcomment %}
 
         <h3>
@@ -186,7 +191,10 @@
         {% endif %}
         <div>
             <span><i> By {{ article.author|truncatewords:2 }}</i>, </span>
-            <span>in <a href="{% url 'year_archive' year=article.published_year.year %}" class="year">{{article.published_year.year}}</a></span>
+            <span>in <a href="{% url 'year_archive' year=article.published_year %}" class="year">{{ article.published_year }}</a></span>
+            {% if article.link %}
+            <span> · <a class="source-link" href="{{ article.link }}" target="_blank" rel="noopener noreferrer">🔗 Source</a></span>
+            {% endif %}
         </div>
     </li>
     {% endfor %}

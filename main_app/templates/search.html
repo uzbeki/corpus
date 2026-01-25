@@ -35,7 +35,10 @@
     <li>
         <a title="Go to full article page" href="{% url 'article_detail' article_id=result.article.pk %}" target="_blank" rel="noopener noreferrer"><h2>{{ result.article.title }} 🔗</h2></a>
         {% if result.article.author %}
-        <p>by {{ result.article.author }} in {{result.article.published_year.year}}</p>
+        <p>by {{ result.article.author }} in {{ result.article.published_year }}</p>
+        {% endif %}
+        {% if result.article.link %}
+        <p><a class="source-link" href="{{ result.article.link }}" target="_blank" rel="noopener noreferrer">🔗 Source</a></p>
         {% endif %}
         <p>Published in {{ result.article.newspaper.title }}</p>
         <p>Frequency: {{ result.frequency }}</p>

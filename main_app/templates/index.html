@@ -223,7 +223,12 @@
     </section>
    {% for newspaper in newspapers %}
    <div class="newspaper">
-        <h2 class="newspaper_title"><a href="{% url 'newspaper_detail' newspaper_id=newspaper.id %}">{{ newspaper.title }}</a></h2>
+        <h2 class="newspaper_title">
+            <a href="{% url 'newspaper_detail' newspaper_id=newspaper.id %}">{{ newspaper.title }}</a>
+            {% if newspaper.link %}
+            <span> · <a class="source-link" href="{{ newspaper.link }}" target="_blank" rel="noopener noreferrer">🔗 Source</a></span>
+            {% endif %}
+        </h2>
         <ul class="featured">
             {% for article in newspaper.article_set.random3 %}
             <li>
@@ -246,7 +251,10 @@
                     {% endif %}
                     <div>
                         <span><i> By {{ article.author|truncatewords:2 }}</i>, </span>
-                        <span>in <a href="{% url 'year_archive' year=article.published_year.year %}" class="year">{{article.published_year.year}}</a></span>
+                        <span>in <a href="{% url 'year_archive' year=article.published_year %}" class="year">{{ article.published_year }}</a></span>
+                        {% if article.link %}
+                        <span> · <a class="source-link" href="{{ article.link }}" target="_blank" rel="noopener noreferrer">🔗 Source</a></span>
+                        {% endif %}
                     </div>
                 </div>
             </li>
@@ -259,7 +267,7 @@
         <h2>Statistics by year</h2>
         <ul>
             {% for year in published_years %}
-                <li><a href="{% url 'year_archive' year=year.year %}" class="year">{{year.year}}</a></li>
+                <li><a href="{% url 'year_archive' year=year %}" class="year">{{ year }}</a></li>
             {% endfor %}
         </ul>
     </div>

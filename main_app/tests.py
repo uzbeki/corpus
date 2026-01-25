@@ -44,7 +44,7 @@ class SearchApostropheTests(TestCase):
             newspaper=self.paper,
             content="Bu xo'jalik haqida maqola.",
             language=Article.UZBEK,
-            published_year="2020-01-01",
+            published_year=2020,
         )
 
         results = Article.objects.search("xo'jalik", language=Article.UZBEK)
@@ -57,7 +57,7 @@ class SearchApostropheTests(TestCase):
             newspaper=self.paper,
             content="Bu xo’jalik haqida maqola.",
             language=Article.UZBEK,
-            published_year="2021-01-01",
+            published_year=2021,
         )
 
         results = Article.objects.search("xo'jalik", language=Article.UZBEK)

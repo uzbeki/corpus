@@ -195,3 +195,24 @@ footer p:first-child {
     background: rgba(233, 30, 99, 0.16);
     color: #880e4f;
 }
+
+.source-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    background: #f1f5f9;
+    color: #0f172a;
+    text-decoration: none;
+    font-size: 0.9rem;
+    border: 1px solid #e2e8f0;
+}
+
+.source-link:hover {
+    background: #e2e8f0;
+}
+
+.source-link:focus-visible {
+    outline-offset: 0.2rem;
+}
