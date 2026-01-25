@@ -11,10 +11,13 @@
 <article>
     <h1>{{ article.title }}</h1>
     <div class="meta">
-        <span><i> By {{ article.author|truncatewords:2 }}</i>, </span>
+        <span><i> By {{ article.author|truncatewords:5 }}</i>, </span>
         <span>in <a href="{% url 'year_archive' year=article.published_year %}" class="year">{{ article.published_year }}</a></span>
         {% if article.link %}
         <span> · <a class="source-link" href="{{ article.link }}" target="_blank" rel="noopener noreferrer">🔗 Source</a></span>
+        {% endif %}
+        {% if user.is_staff %}
+        <span> · <a class="source-link" href="{% url 'admin:main_app_article_change' article.id %}" target="_blank" rel="noopener noreferrer">✏️ Edit in admin</a></span>
         {% endif %}
     </div>
     <div class="name-counts" id="gender-name-counts"></div>

@@ -9,6 +9,7 @@ from django.db import models
 from django.db.models import Count
 from django.db.models.query import QuerySet
 from django.http import HttpResponse
+from django.urls import reverse
 
 from main_app.types import SearchResult, SearchResultItem
 from main_app.utils import frequency_stats, search_word
@@ -74,6 +75,9 @@ class Newspaper(models.Model):
 
     def __str__(self):
         return self.title
+
+    def get_absolute_url(self):
+        return reverse("newspaper_detail", kwargs={"newspaper_id": self.pk})
 
 
 class ArticleQuerySet(QuerySet):
@@ -348,6 +352,9 @@ class Article(models.Model):
 
     def __str__(self):
         return self.title
+
+    def get_absolute_url(self):
+        return reverse("article_detail", kwargs={"article_id": self.pk})
 
     def frequency(self, word: str):
         """

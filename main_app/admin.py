@@ -1,8 +1,9 @@
 from django.contrib import admin
+from django.utils.html import format_html
 from main_app.models import Article, Newspaper
 
 # admin.site.site_title = 'Site Administration'
-admin.site.site_header = 'corpus.bekhruz.com'
+admin.site.site_header = 'Zahri Corpus Admin Panel'
 
 class ArticleInline(admin.TabularInline):
     model = Article
@@ -10,7 +11,15 @@ class ArticleInline(admin.TabularInline):
 
 class NewspaperAdmin(admin.ModelAdmin):
     inlines = [ArticleInline]
+    list_display = ("title", "public_link")
     search_fields = ("title",)
+
+    @admin.display(description="Public page")
+    def public_link(self, obj: Newspaper):
+        return format_html(
+            '<a href="{}" target="_blank" rel="noopener noreferrer">View</a>',
+            obj.get_absolute_url(),
+        )
 
 @admin.register(Article)
 class ArticleAdmin(admin.ModelAdmin):
@@ -23,6 +32,7 @@ class ArticleAdmin(admin.ModelAdmin):
         "word_count",
         "annotated_male_count",
         "annotated_female_count",
+        "public_link",
     )
     list_select_related = ("newspaper",)
     search_fields = (
@@ -54,6 +64,13 @@ class ArticleAdmin(admin.ModelAdmin):
     @admin.display(description="Female names")
     def annotated_female_count(self, obj: Article):
         return obj.annotated_name_counts().get("female", 0)
+
+    @admin.display(description="Public page")
+    def public_link(self, obj: Article):
+        return format_html(
+            '<a href="{}" target="_blank" rel="noopener noreferrer">View</a>',
+            obj.get_absolute_url(),
+        )
 
 
 admin.site.register(Newspaper, NewspaperAdmin)

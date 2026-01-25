@@ -13,6 +13,9 @@
     {% if newspaper.link %}
     <small> · <a class="source-link" href="{{ newspaper.link }}" target="_blank" rel="noopener noreferrer">🔗 Source</a></small>
     {% endif %}
+    {% if user.is_staff %}
+    <small> · <a class="source-link" href="{% url 'admin:main_app_newspaper_change' newspaper.id %}" target="_blank" rel="noopener noreferrer">✏️ Edit in admin</a></small>
+    {% endif %}
 </h1>
 <section class="banner">
     <div class="stats">
