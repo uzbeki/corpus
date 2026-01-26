@@ -10,9 +10,12 @@ class ArticleInline(admin.TabularInline):
     extra = 1
 
 class NewspaperAdmin(admin.ModelAdmin):
-    inlines = [ArticleInline]
-    list_display = ("title", "public_link")
+    list_display = ("title", "article_count", "public_link")
     search_fields = ("title",)
+
+    @admin.display(description="Articles", ordering="article_count")
+    def article_count(self, obj: Newspaper):
+        return obj.article_set.count()
 
     @admin.display(description="Public page")
     def public_link(self, obj: Newspaper):
