@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.db.models import Count
 from django.utils.html import format_html
 from main_app.models import Article, Newspaper
 
@@ -13,9 +14,13 @@ class NewspaperAdmin(admin.ModelAdmin):
     list_display = ("title", "article_count", "public_link")
     search_fields = ("title",)
 
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        return queryset.annotate(article_count=Count("article"))
+
     @admin.display(description="Articles", ordering="article_count")
     def article_count(self, obj: Newspaper):
-        return obj.article_set.count()
+        return obj.article_count
 
     @admin.display(description="Public page")
     def public_link(self, obj: Newspaper):
