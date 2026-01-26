@@ -6,60 +6,60 @@
 
 {% block main %}
     <section class="space-y-10">
-        <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-soft">
+        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-soft">
             <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
-                    <p class="text-xs uppercase tracking-[0.3em] text-slate-400">Newspapers</p>
-                    <h4 class="stat-count mt-3 text-2xl font-semibold text-white" data-count="{{ newspapers|length }}" data-format="int">{{ newspapers|length }}</h4>
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Newspapers</p>
+                    <h4 class="stat-count mt-3 text-2xl font-semibold text-slate-900" data-count="{{ newspapers|length }}" data-format="int">{{ newspapers|length }}</h4>
                 </div>
-                <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
-                    <p class="text-xs uppercase tracking-[0.3em] text-slate-400">Articles</p>
-                    <h4 class="stat-count mt-3 text-2xl font-semibold text-white" data-count="{{ article_count }}" data-format="int">{{ article_count|intcomma }}</h4>
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Articles</p>
+                    <h4 class="stat-count mt-3 text-2xl font-semibold text-slate-900" data-count="{{ article_count }}" data-format="int">{{ article_count|intcomma }}</h4>
                 </div>
-                <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
-                    <p class="text-xs uppercase tracking-[0.3em] text-slate-400">Words (non-unique)</p>
-                    <h4 class="stat-count mt-3 text-2xl font-semibold text-white" data-count="{{ word_count }}" data-format="int">{{ word_count|intcomma }}</h4>
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Words (non-unique)</p>
+                    <h4 class="stat-count mt-3 text-2xl font-semibold text-slate-900" data-count="{{ word_count }}" data-format="int">{{ word_count|intcomma }}</h4>
                 </div>
-                <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
-                    <p class="text-xs uppercase tracking-[0.3em] text-slate-400">Annotated names</p>
-                    <h4 class="stat-count mt-3 text-2xl font-semibold text-white" data-count="{{ name_counts.total }}" data-format="int">{{ name_counts.total|intcomma }}</h4>
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Annotated names</p>
+                    <h4 class="stat-count mt-3 text-2xl font-semibold text-slate-900" data-count="{{ name_counts.total }}" data-format="int">{{ name_counts.total|intcomma }}</h4>
                 </div>
-                <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
-                    <p class="text-xs uppercase tracking-[0.3em] text-slate-400">TTR</p>
-                    <h4 class="stat-count mt-3 text-2xl font-semibold text-white" data-count="{{ text_stats.ttr }}" data-format="float:3">{{ text_stats.ttr|floatformat:3 }}</h4>
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">TTR</p>
+                    <h4 class="stat-count mt-3 text-2xl font-semibold text-slate-900" data-count="{{ text_stats.ttr }}" data-format="float:3">{{ text_stats.ttr|floatformat:3 }}</h4>
                 </div>
-                <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
-                    <p class="text-xs uppercase tracking-[0.3em] text-slate-400">Hapax</p>
-                    <h4 class="stat-count mt-3 text-2xl font-semibold text-white" data-count="{{ text_stats.hapax_count }}" data-format="int">{{ text_stats.hapax_count|intcomma }}</h4>
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Hapax</p>
+                    <h4 class="stat-count mt-3 text-2xl font-semibold text-slate-900" data-count="{{ text_stats.hapax_count }}" data-format="int">{{ text_stats.hapax_count|intcomma }}</h4>
                 </div>
             </div>
         </div>
         <div class="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
-            <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-soft">
+            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-soft">
                 <div class="flex flex-wrap items-center justify-between gap-4">
                     <div>
-                        <p class="text-xs uppercase tracking-[0.3em] text-slate-400">Insight</p>
-                        <h2 class="mt-2 text-xl font-semibold text-white">Top frequency overview</h2>
+                        <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Insight</p>
+                        <h2 class="mt-2 text-xl font-semibold text-slate-900">Top frequency overview</h2>
                     </div>
                     <div class="flex flex-wrap items-center gap-4">
-                        <div class="flex items-center gap-2 rounded-full border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm">
+                        <div class="flex items-center gap-2 rounded-full border border-slate-300 bg-slate-50 px-3 py-2 text-sm">
                             <span class="text-xs uppercase tracking-[0.2em] text-slate-500">Language</span>
-                            <label class="flex items-center gap-1 text-slate-200">
+                            <label class="flex items-center gap-1 text-slate-700">
                                 <input type="radio" id="english" name="language" value="english" checked class="accent-brand-500">
                                 English
                             </label>
-                            <label class="flex items-center gap-1 text-slate-200">
+                            <label class="flex items-center gap-1 text-slate-700">
                                 <input type="radio" id="uzbek" name="language" value="uzbek" class="accent-brand-500">
                                 Uzbek
                             </label>
                         </div>
-                        <div class="flex items-center gap-2 rounded-full border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm">
+                        <div class="flex items-center gap-2 rounded-full border border-slate-300 bg-slate-50 px-3 py-2 text-sm">
                             <span class="text-xs uppercase tracking-[0.2em] text-slate-500">Dataset</span>
-                            <label class="flex items-center gap-1 text-slate-200">
+                            <label class="flex items-center gap-1 text-slate-700">
                                 <input type="radio" id="dataset-words" name="dataset" value="words" checked class="accent-brand-500">
                                 Words
                             </label>
-                            <label class="flex items-center gap-1 text-slate-200">
+                            <label class="flex items-center gap-1 text-slate-700">
                                 <input type="radio" id="dataset-names" name="dataset" value="names" class="accent-brand-500">
                                 Names
                             </label>
@@ -70,17 +70,17 @@
                     <canvas id="word-frequency-chart" class="max-h-[420px]"></canvas>
                 </div>
                 <div id="download" class="mt-6 flex items-center justify-between">
-                    <p class="text-sm text-slate-400">CSV export available for the selected dataset.</p>
+                    <p class="text-sm text-slate-600">CSV export available for the selected dataset.</p>
                     <button type="button" class="rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-soft transition hover:bg-brand-500">download full dataset</button>
                 </div>
             </div>
-            <div class="rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900/80 to-slate-950/80 p-6 shadow-soft">
-                <p class="text-xs uppercase tracking-[0.3em] text-slate-400">Explore</p>
-                <h3 class="mt-2 text-xl font-semibold text-white">Browse by year</h3>
-                <p class="mt-2 text-sm text-slate-400">Jump into a specific year to explore article stats, lexical frequency, and annotated names.</p>
+            <div class="rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-brand-50 to-brand-100 p-6 shadow-soft">
+                <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Explore</p>
+                <h3 class="mt-2 text-xl font-semibold text-slate-900">Browse by year</h3>
+                <p class="mt-2 text-sm text-slate-600">Jump into a specific year to explore article stats, lexical frequency, and annotated names.</p>
                 <div class="mt-4 flex flex-wrap gap-2">
                     {% for year in published_years %}
-                        <a href="{% url 'year_archive' year=year %}" class="rounded-full border border-slate-700 px-3 py-1 text-sm text-slate-200 transition hover:border-brand-500 hover:text-white">{{ year }}</a>
+                        <a href="{% url 'year_archive' year=year %}" class="rounded-full border border-slate-300 px-3 py-1 text-sm text-slate-700 transition hover:border-brand-500 hover:text-brand-700">{{ year }}</a>
                     {% endfor %}
                 </div>
             </div>
@@ -298,43 +298,43 @@
         </script>
 
     </section>
-   <section class="mt-12 space-y-6">
+    <section class="mt-12 space-y-6">
         <div class="flex items-center justify-between">
-            <h2 class="text-2xl font-semibold text-white">Featured newspapers</h2>
-            <p class="text-sm text-slate-400">Highlights from each publication.</p>
+            <h2 class="text-2xl font-semibold text-slate-900">Featured newspapers</h2>
+            <p class="text-sm text-slate-600">Highlights from each publication.</p>
         </div>
         {% for newspaper in newspapers %}
-        <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-soft">
+        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-soft">
             <div class="flex flex-wrap items-center justify-between gap-3">
-                <h3 class="text-xl font-semibold text-white">
+                <h3 class="text-xl font-semibold text-slate-900">
                     <a class="transition hover:text-brand-400" href="{% url 'newspaper_detail' newspaper_id=newspaper.id %}">{{ newspaper.title }}</a>
                 </h3>
                 {% if newspaper.link %}
-                <a class="rounded-full border border-slate-700 px-3 py-1 text-sm text-slate-200 transition hover:border-brand-500 hover:text-white" href="{{ newspaper.link }}" target="_blank" rel="noopener noreferrer">🔗 Source</a>
+                <a class="rounded-full border border-slate-300 px-3 py-1 text-sm text-slate-700 transition hover:border-brand-500 hover:text-brand-700" href="{{ newspaper.link }}" target="_blank" rel="noopener noreferrer">🔗 Source</a>
                 {% endif %}
             </div>
             <div class="mt-6 grid gap-4 md:grid-cols-3">
                 {% for article in newspaper.article_set.random3 %}
-                <article class="flex h-full flex-col rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+                <article class="flex h-full flex-col rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <div class="mb-4 overflow-hidden rounded-xl">
                         <img src="{% url 'geo_placeholder_svg' seed=article.pk %}" alt="{{ article.title }}" class="h-40 w-full object-cover">
                     </div>
                     <div class="flex-1">
-                        <h4 class="text-lg font-semibold text-white">
+                        <h4 class="text-lg font-semibold text-slate-900">
                             <a title="Go to full article page" href="{% url 'article_detail' article_id=article.pk %}" rel="noopener noreferrer" class="transition hover:text-brand-400">{{ article.title }}</a>
                         </h4>
                         <p class="mt-1 text-xs uppercase tracking-[0.2em] text-slate-500">{{ article.get_language_display }}</p>
                         {% if forloop.first %}
-                        <p class="mt-3 text-sm text-slate-300" data-gender-annotations>{{ article.content|truncatewords:50 }}</p>
+                        <p class="mt-3 text-sm text-slate-700" data-gender-annotations>{{ article.content|truncatewords:50 }}</p>
                         {% else %}
-                        <p class="mt-3 text-sm text-slate-300" data-gender-annotations>{{ article.content|truncatewords:30 }}</p>
+                        <p class="mt-3 text-sm text-slate-700" data-gender-annotations>{{ article.content|truncatewords:30 }}</p>
                         {% endif %}
                     </div>
-                    <div class="mt-4 text-xs text-slate-400">
+                    <div class="mt-4 text-xs text-slate-600">
                         <span><i> By {{ article.author|truncatewords:2 }}</i>, </span>
-                        <span>in <a href="{% url 'year_archive' year=article.published_year %}" class="text-slate-200 transition hover:text-white">{{ article.published_year }}</a></span>
+                        <span>in <a href="{% url 'year_archive' year=article.published_year %}" class="text-slate-700 transition hover:text-brand-700">{{ article.published_year }}</a></span>
                         {% if article.link %}
-                        <span> · <a class="text-slate-200 transition hover:text-white" href="{{ article.link }}" target="_blank" rel="noopener noreferrer">🔗 Source</a></span>
+                        <span> · <a class="text-slate-700 transition hover:text-brand-700" href="{{ article.link }}" target="_blank" rel="noopener noreferrer">🔗 Source</a></span>
                         {% endif %}
                     </div>
                 </article>

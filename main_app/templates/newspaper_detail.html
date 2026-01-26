@@ -8,59 +8,59 @@
 {% block main %}
 {% comment %} article detail page {% endcomment %}
 <section class="space-y-6">
-    <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-soft">
+    <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-soft">
         <div class="flex flex-wrap items-center justify-between gap-4">
             <div>
                 <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Newspaper</p>
-                <h1 class="mt-2 text-3xl font-semibold text-white">{{ newspaper.title }}</h1>
+                <h1 class="mt-2 text-3xl font-semibold text-slate-900">{{ newspaper.title }}</h1>
             </div>
             <div class="flex flex-wrap items-center gap-2 text-sm">
                 {% if newspaper.link %}
-                <a class="rounded-full border border-slate-700 px-3 py-1 text-slate-200 transition hover:border-brand-500 hover:text-white" href="{{ newspaper.link }}" target="_blank" rel="noopener noreferrer">🔗 Source</a>
+                <a class="rounded-full border border-slate-300 px-3 py-1 text-slate-700 transition hover:border-brand-500 hover:text-brand-700" href="{{ newspaper.link }}" target="_blank" rel="noopener noreferrer">🔗 Source</a>
                 {% endif %}
                 {% if user.is_staff %}
-                <a class="rounded-full bg-slate-800 px-3 py-1 text-slate-200 transition hover:bg-slate-700" href="{% url 'admin:main_app_newspaper_change' newspaper.id %}" target="_blank" rel="noopener noreferrer">✏️ Edit in admin</a>
+                <a class="rounded-full bg-slate-100 px-3 py-1 text-slate-700 transition hover:bg-slate-200" href="{% url 'admin:main_app_newspaper_change' newspaper.id %}" target="_blank" rel="noopener noreferrer">✏️ Edit in admin</a>
                 {% endif %}
             </div>
         </div>
     </div>
 
-    <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-soft">
+    <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-soft">
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Articles</p>
-                <h4 class="mt-3 text-2xl font-semibold text-white">{{ article_count|intcomma }}</h4>
+                <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ article_count|intcomma }}</h4>
             </div>
-            <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Words</p>
-                <h4 class="mt-3 text-2xl font-semibold text-white">{{ word_count|intcomma }}</h4>
+                <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ word_count|intcomma }}</h4>
             </div>
-            <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Annotated names</p>
-                <h4 class="mt-3 text-2xl font-semibold text-white">{{ name_stats.counts.total|intcomma }}</h4>
+                <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ name_stats.counts.total|intcomma }}</h4>
             </div>
-            <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <p class="text-xs uppercase tracking-[0.3em] text-slate-500">TTR</p>
-                <h4 class="mt-3 text-2xl font-semibold text-white">{{ text_stats.ttr|floatformat:3 }}</h4>
+                <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ text_stats.ttr|floatformat:3 }}</h4>
             </div>
-            <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Hapax</p>
-                <h4 class="mt-3 text-2xl font-semibold text-white">{{ text_stats.hapax_count|intcomma }}</h4>
+                <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ text_stats.hapax_count|intcomma }}</h4>
             </div>
         </div>
         <div class="mt-8">
             <div class="flex flex-wrap items-center justify-between gap-4">
                 <div>
                     <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Distribution</p>
-                    <h3 class="mt-2 text-lg font-semibold text-white">Top frequency chart</h3>
+                    <h3 class="mt-2 text-lg font-semibold text-slate-900">Top frequency chart</h3>
                 </div>
-                <div class="flex items-center gap-3 rounded-full border border-slate-700 bg-slate-950/70 px-4 py-2 text-sm">
+                <div class="flex items-center gap-3 rounded-full border border-slate-300 bg-slate-50 px-4 py-2 text-sm">
                     <span class="text-xs uppercase tracking-[0.2em] text-slate-500">Dataset</span>
-                    <label class="flex items-center gap-1 text-slate-200">
+                    <label class="flex items-center gap-1 text-slate-700">
                         <input type="radio" id="dataset-words" name="dataset" value="words" checked class="accent-brand-500">
                         Words
                     </label>
-                    <label class="flex items-center gap-1 text-slate-200">
+                    <label class="flex items-center gap-1 text-slate-700">
                         <input type="radio" id="dataset-names" name="dataset" value="names" class="accent-brand-500">
                         Names
                     </label>
@@ -186,28 +186,28 @@
         });
     </script>
 
-    <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-soft">
+    <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-soft">
         <div class="flex items-center justify-between">
-            <h2 class="text-xl font-semibold text-white">All articles</h2>
-            <p class="text-sm text-slate-400">{{ article_count|intcomma }} total</p>
+            <h2 class="text-xl font-semibold text-slate-900">All articles</h2>
+            <p class="text-sm text-slate-600">{{ article_count|intcomma }} total</p>
         </div>
         <div class="mt-6 grid gap-4 md:grid-cols-2">
             {% for article in newspaper.article_set.all %}
-            <article class="flex h-full flex-col rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
-                <h3 class="text-lg font-semibold text-white">
+            <article class="flex h-full flex-col rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <h3 class="text-lg font-semibold text-slate-900">
                     <a title="Go to full article page" href="{% url 'article_detail' article_id=article.pk %}" rel="noopener noreferrer" class="transition hover:text-brand-400">{{ article.title }}</a>
                 </h3>
                 <p class="mt-1 text-xs uppercase tracking-[0.2em] text-slate-500">{{ article.get_language_display }}</p>
                 {% if forloop.first %}
-                <p class="mt-3 text-sm text-slate-300" data-gender-annotations>{{ article.content|truncatewords:80 }}</p>
+                <p class="mt-3 text-sm text-slate-700" data-gender-annotations>{{ article.content|truncatewords:80 }}</p>
                 {% else %}
-                <p class="mt-3 text-sm text-slate-300" data-gender-annotations>{{ article.content|truncatewords:20 }}</p>
+                <p class="mt-3 text-sm text-slate-700" data-gender-annotations>{{ article.content|truncatewords:20 }}</p>
                 {% endif %}
-                <div class="mt-4 text-xs text-slate-400">
+                <div class="mt-4 text-xs text-slate-600">
                     <span><i> By {{ article.author|truncatewords:2 }}</i>, </span>
-                    <span>in <a href="{% url 'year_archive' year=article.published_year %}" class="text-slate-200 transition hover:text-white">{{ article.published_year }}</a></span>
+                    <span>in <a href="{% url 'year_archive' year=article.published_year %}" class="text-slate-700 transition hover:text-brand-700">{{ article.published_year }}</a></span>
                     {% if article.link %}
-                    <span> · <a class="text-slate-200 transition hover:text-white" href="{{ article.link }}" target="_blank" rel="noopener noreferrer">🔗 Source</a></span>
+                    <span> · <a class="text-slate-700 transition hover:text-brand-700" href="{{ article.link }}" target="_blank" rel="noopener noreferrer">🔗 Source</a></span>
                     {% endif %}
                 </div>
             </article>

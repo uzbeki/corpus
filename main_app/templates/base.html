@@ -25,28 +25,28 @@
             --color-brand-700: #1d4ed8;
             --color-brand-800: #1e40af;
             --color-brand-900: #1e3a8a;
-            --shadow-soft: 0 10px 30px -15px rgba(15, 23, 42, 0.3);
+            --shadow-soft: 0 14px 30px -18px rgba(15, 23, 42, 0.18);
         }
     </style>
     <style>
         body { font-family: 'Inter', ui-sans-serif, system-ui; }
-        ::selection { background: rgba(59,130,246,.25); }
+        ::selection { background: rgba(59,130,246,.18); }
         a, button { transition: color .2s ease, background-color .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease; }
         a:hover, button:hover { transform: translateY(-1px); }
         a:active, button:active { transform: translateY(0); }
 
         .male-name {
-            background: rgba(56, 189, 248, 0.22);
-            color: #e2f5ff;
-            border: 1px solid rgba(56, 189, 248, 0.35);
+            background: #dbeafe;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
             padding: 0 0.2rem;
             border-radius: 0.35rem;
             font-weight: 600;
         }
         .female-name {
-            background: rgba(244, 114, 182, 0.2);
-            color: #ffe4f2;
-            border: 1px solid rgba(244, 114, 182, 0.35);
+            background: #fce7f3;
+            color: #be185d;
+            border: 1px solid #fbcfe8;
             padding: 0 0.2rem;
             border-radius: 0.35rem;
             font-weight: 600;
@@ -65,7 +65,7 @@
     </style>
     {% block extra_head %}{% endblock extra_head %}
 </head>
-<body class="min-h-screen bg-slate-950 text-slate-100">
+<body class="min-h-screen bg-slate-50 text-slate-900">
 {% block header %}{% include 'header.html' %}{% endblock header %}
 <main class="mx-auto w-full max-w-6xl px-4 pb-16 pt-6 sm:px-6 lg:px-8">{% block main %}{% endblock main %}</main>
 {% block footer %}{% include "footer.html" %}

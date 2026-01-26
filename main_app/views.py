@@ -337,9 +337,9 @@ def geo_placeholder_svg(request, seed: int) -> HttpResponse:
     width = 1200
     height = 640
 
-    background_a = "#0B1220"
-    background_b = "#111827"
-    accents = ["#22D3EE", "#6366F1", "#A78BFA", "#34D399", "#60A5FA", "#F472B6", "#FB923C", "#F87171"]
+    background_a = "#F8FAFC"
+    background_b = "#EEF2FF"
+    accents = ["#2563EB", "#7C3AED", "#06B6D4", "#10B981", "#F59E0B", "#F97316", "#EF4444", "#22C55E"]
     accent_a = rng.choice(accents)
     accent_b = rng.choice([c for c in accents if c != accent_a])
     accent_c = rng.choice([c for c in accents if c not in [accent_a, accent_b]])
@@ -350,8 +350,8 @@ def geo_placeholder_svg(request, seed: int) -> HttpResponse:
         w = rng.randint(140, 420)
         h = rng.randint(100, 260)
         r = rng.randint(8, 48)
-        fill = rng.choice(["#0F172A", "#111827", "#1E293B"])
-        stroke = rng.choice(["#1E293B", "#334155", "none"])
+        fill = rng.choice(["#FFFFFF", "#F8FAFC", "#E2E8F0"])
+        stroke = rng.choice(["#E2E8F0", "#CBD5E1", "none"])
         stroke_width = rng.randint(1, 3) if stroke != "none" else 0
         rotation = rng.randint(-15, 15)
         cx, cy = x + w/2, y + h/2
@@ -361,8 +361,8 @@ def geo_placeholder_svg(request, seed: int) -> HttpResponse:
         cx = rng.randint(120, width - 120)
         cy = rng.randint(120, height - 120)
         r = rng.randint(50, 180)
-        fill = rng.choice(["#0F172A", "#111827", "#1E293B"])
-        stroke = rng.choice(["#1E293B", "#334155", "none"]) if rng.random() > 0.6 else "none"
+        fill = rng.choice(["#FFFFFF", "#F8FAFC", "#E2E8F0"])
+        stroke = rng.choice(["#E2E8F0", "#CBD5E1", "none"]) if rng.random() > 0.6 else "none"
         stroke_width = rng.randint(1, 4) if stroke != "none" else 0
         return f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="{fill}" stroke="{stroke}" stroke-width="{stroke_width}" />'
 
@@ -372,7 +372,7 @@ def geo_placeholder_svg(request, seed: int) -> HttpResponse:
         rx = rng.randint(80, 200)
         ry = rng.randint(40, 120)
         rotation = rng.randint(0, 180)
-        fill = rng.choice(["#0F172A", "#111827", "#1E293B"])
+        fill = rng.choice(["#FFFFFF", "#F8FAFC", "#E2E8F0"])
         return f'<ellipse cx="{cx}" cy="{cy}" rx="{rx}" ry="{ry}" fill="{fill}" transform="rotate({rotation} {cx} {cy})" />'
 
     def rand_polygon():
@@ -387,8 +387,8 @@ def geo_placeholder_svg(request, seed: int) -> HttpResponse:
             px = int(cx + radius * math.cos(angle))
             py = int(cy + radius * math.sin(angle))
             points.append(f"{px},{py}")
-        fill = rng.choice(["#0F172A", "#111827", "#1E293B"])
-        stroke = rng.choice(["#1E293B", "#334155", "none"]) if rng.random() > 0.5 else "none"
+        fill = rng.choice(["#FFFFFF", "#F8FAFC", "#E2E8F0"])
+        stroke = rng.choice(["#E2E8F0", "#CBD5E1", "none"]) if rng.random() > 0.5 else "none"
         stroke_width = rng.randint(1, 3) if stroke != "none" else 0
         return f'<polygon points="{" ".join(points)}" fill="{fill}" stroke="{stroke}" stroke-width="{stroke_width}" />'
 
@@ -405,7 +405,7 @@ def geo_placeholder_svg(request, seed: int) -> HttpResponse:
             px = int(cx + radius * math.cos(angle - math.pi/2))
             py = int(cy + radius * math.sin(angle - math.pi/2))
             points.append(f"{px},{py}")
-        fill = rng.choice(["#0F172A", "#111827", "#1E293B"])
+        fill = rng.choice(["#FFFFFF", "#F8FAFC", "#E2E8F0"])
         return f'<polygon points="{" ".join(points)}" fill="{fill}" />'
 
     def rand_triangle():
@@ -415,8 +415,8 @@ def geo_placeholder_svg(request, seed: int) -> HttpResponse:
         y2 = y1 + rng.randint(120, 250)
         x3 = x1 + rng.randint(-150, 150)
         y3 = y1 + rng.randint(120, 250)
-        fill = rng.choice(["#0F172A", "#111827", "#1E293B"])
-        stroke = rng.choice(["#1E293B", "none"]) if rng.random() > 0.6 else "none"
+        fill = rng.choice(["#FFFFFF", "#F8FAFC", "#E2E8F0"])
+        stroke = rng.choice(["#E2E8F0", "none"]) if rng.random() > 0.6 else "none"
         stroke_width = 2 if stroke != "none" else 0
         return f'<polygon points="{x1},{y1} {x2},{y2} {x3},{y3}" fill="{fill}" stroke="{stroke}" stroke-width="{stroke_width}" />'
 

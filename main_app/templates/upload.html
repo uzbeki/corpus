@@ -3,16 +3,16 @@
 {% block extra_head %}{% endblock extra_head %}
 {% block main %}
 <section class="mx-auto max-w-2xl">
-    <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 shadow-soft">
+    <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-soft">
         <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Upload</p>
-        <h1 class="mt-2 text-3xl font-semibold text-white">Upload file</h1>
-        <p class="mt-2 text-sm text-slate-400">Add a new dataset file to enrich the corpus.</p>
+        <h1 class="mt-2 text-3xl font-semibold text-slate-900">Upload file</h1>
+        <p class="mt-2 text-sm text-slate-600">Add a new dataset file to enrich the corpus.</p>
 
         <form action="" method="post" enctype="multipart/form-data" class="mt-6 space-y-4">
             {% csrf_token %}
-            <label class="flex flex-col gap-2 text-sm text-slate-300" for="file">
+            <label class="flex flex-col gap-2 text-sm text-slate-700" for="file">
                 Select file
-                <input type="file" name="file" id="file" class="rounded-xl border border-dashed border-slate-700 bg-slate-950/70 px-4 py-6 text-sm text-slate-200 file:mr-4 file:rounded-full file:border-0 file:bg-brand-600 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-brand-500" />
+                <input type="file" name="file" id="file" class="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm text-slate-700 file:mr-4 file:rounded-full file:border-0 file:bg-brand-600 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-brand-500" />
             </label>
             <button type="submit" class="w-full rounded-xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white shadow-soft transition hover:bg-brand-500">Upload</button>
         </form>

@@ -17,18 +17,18 @@
 <fieldset class="blockLabels space-y-3">
 
   {% for emailaddress in user.emailaddress_set.all %}
-<div class="ctrlHolder rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-3">
-  <label for="email_radio_{{forloop.counter}}" class="flex flex-wrap items-center gap-2 text-sm text-slate-200 {% if emailaddress.primary %}primary_email{%endif%}">
+<div class="ctrlHolder rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+  <label for="email_radio_{{forloop.counter}}" class="flex flex-wrap items-center gap-2 text-sm text-slate-700 {% if emailaddress.primary %}primary_email{%endif%}">
 
   <input id="email_radio_{{forloop.counter}}" type="radio" name="email" {% if emailaddress.primary or user.emailaddress_set.count == 1 %}checked="checked"{%endif %} value="{{emailaddress.email}}"/>
 
 {{ emailaddress.email }}
     {% if emailaddress.verified %}
-    <span class="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 text-xs text-emerald-200">{% trans "Verified" %}</span>
+    <span class="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700">{% trans "Verified" %}</span>
     {% else %}
-    <span class="rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-xs text-amber-200">{% trans "Unverified" %}</span>
+    <span class="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs text-amber-700">{% trans "Unverified" %}</span>
     {% endif %}
-  {% if emailaddress.primary %}<span class="rounded-full border border-slate-700 px-2 py-0.5 text-xs text-slate-300">{% trans "Primary" %}</span>{% endif %}
+  {% if emailaddress.primary %}<span class="rounded-full border border-slate-300 px-2 py-0.5 text-xs text-slate-600">{% trans "Primary" %}</span>{% endif %}
 </label>
 </div>
   {% endfor %}
@@ -48,7 +48,7 @@
 {% endif %}
 
   {% if can_add_email %}
-    <h2 class="mt-6 text-lg font-semibold text-white">{% trans "Add E-mail Address" %}</h2>
+    <h2 class="mt-6 text-lg font-semibold text-slate-900">{% trans "Add E-mail Address" %}</h2>
 
     <form method="post" action="{% url 'account_email' %}" class="add_email auth-form mt-4">
         {% csrf_token %}
