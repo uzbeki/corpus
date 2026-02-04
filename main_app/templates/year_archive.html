@@ -20,27 +20,27 @@
                 <a class="rounded-full border border-slate-300 px-3 py-1 text-sm text-slate-700 transition hover:border-brand-500 hover:text-brand-700" href="{% url 'year_archive_download' year=year language=1 %}">download CSV</a>
             </div>
             <div class="mt-4 grid gap-4 sm:grid-cols-2">
-                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-sky-50 to-sky-100 p-4 shadow-soft">
                     <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Articles</p>
                     <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ english_article_count|intcomma }}</h4>
                 </div>
-                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-emerald-50 to-emerald-100 p-4 shadow-soft">
                     <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Total words</p>
                     <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ total_english_words|intcomma }}</h4>
                 </div>
-                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-indigo-50 to-indigo-100 p-4 shadow-soft">
                     <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Unique words</p>
                     <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ english_frequency|length|intcomma }}</h4>
                 </div>
-                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-amber-50 to-amber-100 p-4 shadow-soft">
                     <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Annotated names</p>
                     <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ english_name_stats.counts.total|intcomma }}</h4>
                 </div>
-                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-violet-50 to-violet-100 p-4 shadow-soft">
                     <p class="text-xs uppercase tracking-[0.3em] text-slate-500">TTR</p>
                     <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ english_text_stats.ttr|floatformat:3 }}</h4>
                 </div>
-                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-rose-50 to-rose-100 p-4 shadow-soft">
                     <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Hapax</p>
                     <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ english_text_stats.hapax_count|intcomma }}</h4>
                 </div>
@@ -79,27 +79,27 @@
                 <a class="rounded-full border border-slate-300 px-3 py-1 text-sm text-slate-700 transition hover:border-brand-500 hover:text-brand-700" href="{% url 'year_archive_download' year=year language=2 %}">download CSV</a>
             </div>
             <div class="mt-4 grid gap-4 sm:grid-cols-2">
-                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-sky-50 to-sky-100 p-4 shadow-soft">
                     <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Articles</p>
                     <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ uzbek_article_count|intcomma }}</h4>
                 </div>
-                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-emerald-50 to-emerald-100 p-4 shadow-soft">
                     <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Total words</p>
                     <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ total_uzbek_words|intcomma }}</h4>
                 </div>
-                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-indigo-50 to-indigo-100 p-4 shadow-soft">
                     <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Unique words</p>
                     <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ uzbek_frequency|length|intcomma }}</h4>
                 </div>
-                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-amber-50 to-amber-100 p-4 shadow-soft">
                     <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Annotated names</p>
                     <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ uzbek_name_stats.counts.total|intcomma }}</h4>
                 </div>
-                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-violet-50 to-violet-100 p-4 shadow-soft">
                     <p class="text-xs uppercase tracking-[0.3em] text-slate-500">TTR</p>
                     <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ uzbek_text_stats.ttr|floatformat:3 }}</h4>
                 </div>
-                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-rose-50 to-rose-100 p-4 shadow-soft">
                     <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Hapax</p>
                     <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ uzbek_text_stats.hapax_count|intcomma }}</h4>
                 </div>

@@ -50,8 +50,8 @@ class ArticleAdmin(admin.ModelAdmin):
     )
     list_filter = (
         "language",
-        "published_year",
         "newspaper",
+        "published_year",
     )
     ordering = ("-published_year", "newspaper__title", "title")
     autocomplete_fields = ("newspaper",)
