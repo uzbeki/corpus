@@ -31,11 +31,14 @@
 
     <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-soft">
         <div class="name-counts mb-4 text-sm text-slate-600" id="gender-name-counts"></div>
-        <div class="space-y-4 text-base leading-7 text-slate-700" data-gender-annotations data-gender-count-target="#gender-name-counts">{{ article.content|linebreaks }}</div>
+        <div id="article-content" class="space-y-4 text-base leading-7 text-slate-700" data-gender-annotations data-gender-count-target="#gender-name-counts" {% if user.is_staff %}data-annotation-endpoint="{% url 'article_annotate' article_id=article.id %}"{% endif %}>{{ article.content|linebreaks }}</div>
+        {% if user.is_staff %}
+        <p class="mt-3 text-xs text-slate-500">Shortcuts: Ctrl/Cmd+Alt+M (male), Ctrl/Cmd+Alt+F (female), Ctrl/Cmd+Alt+T (toponym). Select an already-marked span and press the same shortcut to unmark.</p>
+        {% endif %}
     </div>
 {% comment %} <pre>{{word_frequency}}</pre> {% endcomment %}
 <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-soft">
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
         <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-emerald-50 to-emerald-100 p-4 shadow-soft">
             <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Total words</p>
             <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ word_count|intcomma }}</h4>
@@ -46,7 +49,11 @@
         </div>
         <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-amber-50 to-amber-100 p-4 shadow-soft">
             <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Annotated names</p>
-            <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ name_stats.counts.male|add:name_stats.counts.female }}</h4>
+            <h4 id="annotated-name-total" class="mt-3 text-2xl font-semibold text-slate-900">{{ name_stats.counts.male|add:name_stats.counts.female }}</h4>
+        </div>
+        <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-teal-50 to-teal-100 p-4 shadow-soft">
+            <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Toponyms</p>
+            <h4 id="annotated-toponym-total" class="mt-3 text-2xl font-semibold text-slate-900">{{ name_stats.counts.toponym }}</h4>
         </div>
         <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-violet-50 to-violet-100 p-4 shadow-soft">
             <p class="text-xs uppercase tracking-[0.3em] text-slate-500">TTR</p>
@@ -72,6 +79,10 @@
                 <label class="flex items-center gap-1 text-slate-700">
                     <input type="radio" id="dataset-names" name="dataset" value="names" class="accent-brand-500">
                     Names
+                </label>
+                <label class="flex items-center gap-1 text-slate-700">
+                    <input type="radio" id="dataset-toponyms" name="dataset" value="toponyms" class="accent-brand-500">
+                    Toponyms
                 </label>
             </div>
         </div>
@@ -162,6 +173,27 @@
             };
         }
 
+        if (metric === 'toponyms') {
+            const toponyms = (chartData.toponyms && chartData.toponyms.frequency) || [];
+            const counts = (chartData.toponyms && chartData.toponyms.counts) || {};
+            const total = counts.toponym ?? toponyms.reduce((acc, cur) => acc + (cur.count || 0), 0);
+
+            return {
+                labels: toponyms.map(item => item.name),
+                datasets: [
+                    {
+                        label: `Toponyms (total ${total})`,
+                        data: toponyms.map(item => item.count),
+                        backgroundColor: "rgba(34, 197, 94, 0.25)",
+                        borderColor: "rgba(22, 163, 74, 1)",
+                        borderWidth: 1,
+                        totalCount: total,
+                    },
+                ],
+                legend: false,
+            };
+        }
+
         return { labels: [], datasets: [], legend: false };
     };
 
@@ -192,6 +224,114 @@
         .catch(() => {
             console.error('Failed to load chart data');
         });
+
+    function getCsrfToken() {
+        const cookie = document.cookie
+            .split('; ')
+            .find((row) => row.startsWith('csrftoken='));
+        return cookie ? decodeURIComponent(cookie.split('=')[1]) : '';
+    }
+
+    function escapeHtml(text) {
+        return text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function selectionOffsetsWithin(container) {
+        const sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0) return null;
+        const range = sel.getRangeAt(0);
+        if (range.collapsed) return null;
+
+        const ancestor = range.commonAncestorContainer;
+        if (!container.contains(ancestor)) return null;
+
+        const preRange = document.createRange();
+        preRange.selectNodeContents(container);
+        preRange.setEnd(range.startContainer, range.startOffset);
+        const start = preRange.toString().length;
+        const selected = range.toString();
+        const end = start + selected.length;
+
+        if (!selected.trim()) return null;
+        return { start, end, selectedText: selected };
+    }
+
+    async function applyAnnotationShortcut(kind) {
+        const contentEl = document.getElementById('article-content');
+        if (!contentEl) return;
+        const endpoint = contentEl.dataset.annotationEndpoint;
+        if (!endpoint) return;
+
+        const offsets = selectionOffsetsWithin(contentEl);
+        if (!offsets) return;
+
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken(),
+            },
+            body: JSON.stringify({
+                start: offsets.start,
+                end: offsets.end,
+                selected_text: offsets.selectedText,
+                kind,
+            }),
+        });
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (!data || typeof data.content !== 'string') return;
+
+        contentEl.innerHTML = escapeHtml(data.content).replace(/\n/g, '<br>');
+        if (window.GenderAnnotations && typeof window.GenderAnnotations.annotateGenderedNames === 'function') {
+            const counts = window.GenderAnnotations.annotateGenderedNames(contentEl);
+            const output = document.querySelector('#gender-name-counts');
+            if (output) {
+                output.textContent = `Male names: ${counts.maleCount} • Female names: ${counts.femaleCount} • Toponyms: ${counts.toponymCount}`;
+            }
+        }
+
+        const nameCounts = data.name_stats && data.name_stats.counts ? data.name_stats.counts : null;
+        if (nameCounts) {
+            const namesTotal = (nameCounts.male || 0) + (nameCounts.female || 0);
+            const namesEl = document.getElementById('annotated-name-total');
+            const toponymEl = document.getElementById('annotated-toponym-total');
+            if (namesEl) namesEl.textContent = String(namesTotal);
+            if (toponymEl) toponymEl.textContent = String(nameCounts.toponym || 0);
+        }
+
+        window.getSelection().removeAllRanges();
+    }
+
+    document.addEventListener('keydown', (event) => {
+        const target = event.target;
+        if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+            return;
+        }
+
+        const primaryPressed = event.ctrlKey || event.metaKey;
+        if (!primaryPressed || !event.altKey) return;
+
+        const key = String(event.key || '').toLowerCase();
+        if (!['m', 'f', 't'].includes(key)) return;
+
+        event.preventDefault();
+
+        if (key === 'm') {
+            applyAnnotationShortcut('male');
+        } else if (key === 'f') {
+            applyAnnotationShortcut('female');
+        } else if (key === 't') {
+            applyAnnotationShortcut('toponym');
+        }
+    });
     </script>
 
 </section>

@@ -24,6 +24,10 @@
                     <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Annotated names</p>
                     <h4 class="stat-count mt-3 text-2xl font-semibold text-slate-900" data-count="{{ name_counts.total }}" data-format="int">{{ name_counts.total|intcomma }}</h4>
                 </div>
+                <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-teal-50 to-teal-100 p-4 shadow-soft">
+                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Toponyms</p>
+                    <h4 class="stat-count mt-3 text-2xl font-semibold text-slate-900" data-count="{{ name_counts.toponym }}" data-format="int">{{ name_counts.toponym|intcomma }}</h4>
+                </div>
                 <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-violet-50 to-violet-100 p-4 shadow-soft">
                     <p class="text-xs uppercase tracking-[0.3em] text-slate-500">TTR</p>
                     <h4 class="stat-count mt-3 text-2xl font-semibold text-slate-900" data-count="{{ text_stats.ttr }}" data-format="float:3">{{ text_stats.ttr|floatformat:3 }}</h4>
@@ -62,6 +66,10 @@
                             <label class="flex items-center gap-1 text-slate-700">
                                 <input type="radio" id="dataset-names" name="dataset" value="names" class="accent-brand-500">
                                 Names
+                            </label>
+                            <label class="flex items-center gap-1 text-slate-700">
+                                <input type="radio" id="dataset-toponyms" name="dataset" value="toponyms" class="accent-brand-500">
+                                Toponyms
                             </label>
                         </div>
                     </div>
@@ -173,13 +181,34 @@
                 };
             }
 
+            if (metric === 'toponyms') {
+                const toponyms = (langData.toponyms && langData.toponyms.frequency) || [];
+                const counts = (langData.toponyms && langData.toponyms.counts) || {};
+                const total = counts.toponym ?? toponyms.reduce((acc, cur) => acc + (cur.count || 0), 0);
+
+                return {
+                    labels: toponyms.map(item => item.name),
+                    datasets: [
+                        {
+                            label: `Toponyms (total ${total})`,
+                            data: toponyms.map(item => item.count),
+                            backgroundColor: "rgba(34, 197, 94, 0.25)",
+                            borderColor: "rgba(22, 163, 74, 1)",
+                            borderWidth: 1,
+                            totalCount: total,
+                        },
+                    ],
+                    legend: false,
+                };
+            }
+
             return { labels: [], datasets: [], legend: false };
         };
 
         const updateDownloadState = () => {
             const label = currentMetric === 'names'
                 ? 'download full annotated names'
-                : 'download full word frequency';
+                : (currentMetric === 'toponyms' ? 'download full toponyms' : 'download full word frequency');
             fullDownloadBtn.disabled = false;
             fullDownloadBtn.textContent = label;
         };
@@ -231,7 +260,9 @@
                             const a = document.createElement('a');
                             a.style.display = 'none';
                             a.href = blobUrl;
-                            const label = currentMetric === 'names' ? 'annotated_names' : 'word_frequency';
+                            const label = currentMetric === 'names'
+                                ? 'annotated_names'
+                                : (currentMetric === 'toponyms' ? 'annotated_toponyms' : 'word_frequency');
                             a.download = `${label}_${currentLanguage}_${Date.now()}.csv`;
                             document.body.appendChild(a);
                             a.click();

@@ -3,6 +3,7 @@
 Markers:
 - Male: [Mr. Smith]
 - Female: ^^Olivera Anna^^
+- Toponym: $$Tashkent$$
 
 This walks text nodes and replaces markers with <span> tags.
 */
@@ -10,7 +11,8 @@ This walks text nodes and replaces markers with <span> tags.
 (function () {
   const MALE_RE = /\[([^\[\]]+?)\]/g;
   const FEMALE_RE = /\^\^([\s\S]+?)\^\^/g;
-  const COMBINED_RE = /(\[([^\[\]]+?)\])|(\^\^([\s\S]+?)\^\^)/g;
+  const TOPONYM_RE = /\$\$([\s\S]+?)\$\$/g;
+  const COMBINED_RE = /(\[([^\[\]]+?)\])|(\^\^([\s\S]+?)\^\^)|(\$\$([\s\S]+?)\$\$)/g;
 
   function shouldSkipNode(node) {
     if (!node || node.nodeType !== Node.TEXT_NODE) return true;
@@ -18,7 +20,11 @@ This walks text nodes and replaces markers with <span> tags.
     if (!parent) return true;
     const tag = parent.tagName;
     if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'TEXTAREA') return true;
-    if (parent.classList.contains('male-name') || parent.classList.contains('female-name')) return true;
+    if (
+      parent.classList.contains('male-name') ||
+      parent.classList.contains('female-name') ||
+      parent.classList.contains('toponym-name')
+    ) return true;
     return false;
   }
 
@@ -31,6 +37,7 @@ This walks text nodes and replaces markers with <span> tags.
     let changed = false;
     let maleCount = 0;
     let femaleCount = 0;
+    let toponymCount = 0;
 
     const fragment = document.createDocumentFragment();
 
@@ -38,6 +45,7 @@ This walks text nodes and replaces markers with <span> tags.
       const full = match[0];
       const maleName = match[2];
       const femaleName = match[4];
+      const toponym = match[6];
 
       const start = match.index;
       const end = start + full.length;
@@ -51,6 +59,7 @@ This walks text nodes and replaces markers with <span> tags.
         if (name) {
           const span = document.createElement('span');
           span.className = 'male-name';
+          span.title = 'Annotated as male name ([...])';
           span.textContent = name;
           fragment.appendChild(span);
           maleCount += 1;
@@ -61,9 +70,21 @@ This walks text nodes and replaces markers with <span> tags.
         if (name) {
           const span = document.createElement('span');
           span.className = 'female-name';
+          span.title = 'Annotated as female name (^^...^^)';
           span.textContent = name;
           fragment.appendChild(span);
           femaleCount += 1;
+        }
+        changed = true;
+      } else if (typeof toponym === 'string') {
+        const name = toponym.trim();
+        if (name) {
+          const span = document.createElement('span');
+          span.className = 'toponym-name';
+          span.title = 'Annotated as toponym ($$...$$)';
+          span.textContent = name;
+          fragment.appendChild(span);
+          toponymCount += 1;
         }
         changed = true;
       } else {
@@ -73,23 +94,24 @@ This walks text nodes and replaces markers with <span> tags.
       lastIndex = end;
     }
 
-    if (!changed) return { changed: false, maleCount: 0, femaleCount: 0 };
+    if (!changed) return { changed: false, maleCount: 0, femaleCount: 0, toponymCount: 0 };
 
     if (lastIndex < text.length) {
       fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
     }
 
     textNode.parentNode.replaceChild(fragment, textNode);
-    return { changed: true, maleCount, femaleCount };
+    return { changed: true, maleCount, femaleCount, toponymCount };
   }
 
   function annotateGenderedNames(rootEl) {
-    if (!rootEl) return { maleCount: 0, femaleCount: 0 };
+    if (!rootEl) return { maleCount: 0, femaleCount: 0, toponymCount: 0 };
 
     const walker = document.createTreeWalker(rootEl, NodeFilter.SHOW_TEXT);
     let node;
     let maleCount = 0;
     let femaleCount = 0;
+    let toponymCount = 0;
 
     const textNodes = [];
     while ((node = walker.nextNode())) {
@@ -100,9 +122,10 @@ This walks text nodes and replaces markers with <span> tags.
       const result = annotateTextNode(textNode);
       maleCount += result.maleCount;
       femaleCount += result.femaleCount;
+      toponymCount += result.toponymCount;
     }
 
-    return { maleCount, femaleCount };
+    return { maleCount, femaleCount, toponymCount };
   }
 
   function init() {
@@ -113,13 +136,14 @@ This walks text nodes and replaces markers with <span> tags.
       if (targetSelector) {
         const output = document.querySelector(targetSelector);
         if (output) {
-            output.textContent = `Male names: ${counts.maleCount} • Female names: ${counts.femaleCount}`;
+          output.textContent = `Male names: ${counts.maleCount} • Female names: ${counts.femaleCount} • Toponyms: ${counts.toponymCount}`;
         }
       }
 
       // Expose counts on element for other scripts
       el.dataset.maleNameCount = String(counts.maleCount);
       el.dataset.femaleNameCount = String(counts.femaleCount);
+      el.dataset.toponymCount = String(counts.toponymCount);
     }
   }
 
@@ -128,6 +152,7 @@ This walks text nodes and replaces markers with <span> tags.
     annotateGenderedNames,
     MALE_RE,
     FEMALE_RE,
+    TOPONYM_RE,
   };
 
   if (document.readyState === 'loading') {

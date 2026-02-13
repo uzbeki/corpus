@@ -1,11 +1,18 @@
 import logging
 import math
 import random
+import json
 
 from django.http import FileResponse, HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import render
+from django.views.decorators.http import require_POST
 
-from main_app.models import Article, Newspaper, create_frequency_csv
+from main_app.models import (
+    Article,
+    Newspaper,
+    create_frequency_csv,
+    resolve_inline_annotation_span,
+)
 from main_app.types import SearchResult
 from main_app.utils import (
     aggregate_word_stats,
@@ -40,28 +47,7 @@ def index(request):
     return render(request, "index.html", context)
 
 
-# search view
 def search(request: HttpRequest):
-    """
-    Search view for searching articles
-    """
-    # get search query
-    query = request.GET.get("q")
-    language = int(request.GET.get("language"))
-    year = request.GET.get("year") or None
-    match_type = int(request.GET.get("match_type") or 0)
-    print(f"match_type: {match_type}")
-    # get search results
-    results: SearchResult = Article.objects.search(query, language, year)
-    if match_type != 0:
-        results = filter_by_match_type(results, match_type)
-    # render search results
-    return render(
-        request, "search.html", {"results": results, "match_type": match_type}
-    )
-
-
-def search_new(request: HttpRequest):
     """Experimental search view with yearly chart and grouped results."""
 
     query = (request.GET.get("q") or "").strip()
@@ -104,7 +90,7 @@ def search_new(request: HttpRequest):
 
     return render(
         request,
-        "search_new.html",
+        "search.html",
         {
             "query": query,
             "results": results,
@@ -123,7 +109,7 @@ def article_detail(request, article_id):
     article = Article.objects.get(id=article_id)
     word_stats = aggregate_word_stats([article])
     name_stats = Article.objects.annotated_name_stats(
-        Article.objects.filter(id=article_id)
+        Article.objects.filter(id=article_id), include_toponyms=True
     )
     # render article detail
     return render(
@@ -164,6 +150,19 @@ def word_frequency_data(request: HttpRequest) -> JsonResponse | HttpResponse:
             writer.writerow([item["name"], item["gender"], item["count"]])
         return response
 
+    def build_toponyms_csv(articles, filename: str) -> HttpResponse:
+        import csv
+
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        writer = csv.writer(response)
+        writer.writerow(["toponym", "count"])
+        name_stats = Article.objects.annotated_name_stats(articles, include_toponyms=True)
+        for item in name_stats["frequency"]:
+            if item["gender"] == "toponym":
+                writer.writerow([item["name"], item["count"]])
+        return response
+
     # check if "full" parameter is passed
     if request.GET.get("full"):
         language_code = resolve_language()
@@ -174,6 +173,9 @@ def word_frequency_data(request: HttpRequest) -> JsonResponse | HttpResponse:
         if dataset == "names":
             filename = f"annotated_names_{language_label}.csv"
             return build_names_csv(articles, filename)
+        if dataset == "toponyms":
+            filename = f"annotated_toponyms_{language_label}.csv"
+            return build_toponyms_csv(articles, filename)
 
         filename = f"word_frequency_{language_label}.csv"
         return create_frequency_csv(articles, filename)
@@ -183,12 +185,24 @@ def word_frequency_data(request: HttpRequest) -> JsonResponse | HttpResponse:
         def build_payload(language_code):
             articles = Article.objects.filter(language=language_code)
             word_stats = aggregate_word_stats(articles)
-            name_stats = Article.objects.annotated_name_stats(articles)
+            name_stats = Article.objects.annotated_name_stats(articles, include_toponyms=True)
+            name_frequency = [
+                item
+                for item in name_stats["frequency"]
+                if item["gender"] in {"male", "female"}
+            ]
+            toponym_frequency = [
+                item for item in name_stats["frequency"] if item["gender"] == "toponym"
+            ]
             return {
                 "words": word_stats["frequency"][:20],
                 "names": {
-                    "frequency": name_stats["frequency"][:20],
+                    "frequency": name_frequency[:20],
                     "counts": name_stats["counts"],
+                },
+                "toponyms": {
+                    "frequency": toponym_frequency[:20],
+                    "counts": {"toponym": name_stats["counts"].get("toponym", 0)},
                 },
             }
 
@@ -210,14 +224,24 @@ def article_frequency(request, article_id) -> JsonResponse:
     article = Article.objects.get(id=article_id)
     word_stats = aggregate_word_stats([article])
     name_stats = Article.objects.annotated_name_stats(
-        Article.objects.filter(id=article_id)
+        Article.objects.filter(id=article_id), include_toponyms=True
     )
+    name_frequency = [
+        item for item in name_stats["frequency"] if item["gender"] in {"male", "female"}
+    ]
+    toponym_frequency = [
+        item for item in name_stats["frequency"] if item["gender"] == "toponym"
+    ]
     return JsonResponse(
         {
             "words": word_stats["frequency"][:20],
             "names": {
-                "frequency": name_stats["frequency"][:20],
+                "frequency": name_frequency[:20],
                 "counts": name_stats["counts"],
+            },
+            "toponyms": {
+                "frequency": toponym_frequency[:20],
+                "counts": {"toponym": name_stats["counts"].get("toponym", 0)},
             },
         },
         safe=False,
@@ -253,6 +277,29 @@ def year_archive(request, year: int):
 
     english_stats = aggregate_word_stats(english)
     uzbek_stats = aggregate_word_stats(uzbek)
+    english_name_stats = Article.objects.annotated_name_stats(
+        english, include_toponyms=True
+    )
+    uzbek_name_stats = Article.objects.annotated_name_stats(uzbek, include_toponyms=True)
+
+    english_name_frequency = [
+        item
+        for item in english_name_stats["frequency"]
+        if item["gender"] in {"male", "female"}
+    ]
+    english_toponym_frequency = [
+        item
+        for item in english_name_stats["frequency"]
+        if item["gender"] == "toponym"
+    ]
+    uzbek_name_frequency = [
+        item
+        for item in uzbek_name_stats["frequency"]
+        if item["gender"] in {"male", "female"}
+    ]
+    uzbek_toponym_frequency = [
+        item for item in uzbek_name_stats["frequency"] if item["gender"] == "toponym"
+    ]
 
     # render year archive
     return render(
@@ -263,12 +310,16 @@ def year_archive(request, year: int):
             "english_frequency": english_stats["frequency"],
             "total_english_words": english_stats["total_words"],
             "english_text_stats": english_stats,
-            "english_name_stats": Article.objects.annotated_name_stats(english),
+            "english_name_stats": english_name_stats,
+            "english_name_frequency": english_name_frequency,
+            "english_toponym_frequency": english_toponym_frequency,
             "uzbek_article_count": uzbek.count(),
             "uzbek_frequency": uzbek_stats["frequency"],
             "total_uzbek_words": uzbek_stats["total_words"],
             "uzbek_text_stats": uzbek_stats,
-            "uzbek_name_stats": Article.objects.annotated_name_stats(uzbek),
+            "uzbek_name_stats": uzbek_name_stats,
+            "uzbek_name_frequency": uzbek_name_frequency,
+            "uzbek_toponym_frequency": uzbek_toponym_frequency,
             "year": year,
         },
     )
@@ -293,7 +344,7 @@ def newspaper_detail(request, newspaper_id):
     # get newspaper
     newspaper = Newspaper.objects.get(id=newspaper_id)
     articles_qs = newspaper.article_set.all()
-    name_stats = Article.objects.annotated_name_stats(articles_qs)
+    name_stats = Article.objects.annotated_name_stats(articles_qs, include_toponyms=True)
     word_stats = aggregate_word_stats(articles_qs)
     # render newspaper detail
     return render(
@@ -316,17 +367,85 @@ def newspaper_frequency(request, newspaper_id) -> JsonResponse:
     """
     articles = Article.objects.filter(newspaper_id=newspaper_id)
     word_stats = aggregate_word_stats(articles)
-    name_stats = Article.objects.annotated_name_stats(articles)
+    name_stats = Article.objects.annotated_name_stats(articles, include_toponyms=True)
+    name_frequency = [
+        item for item in name_stats["frequency"] if item["gender"] in {"male", "female"}
+    ]
+    toponym_frequency = [
+        item for item in name_stats["frequency"] if item["gender"] == "toponym"
+    ]
 
     return JsonResponse(
         {
             "words": word_stats["frequency"][:20],
             "names": {
-                "frequency": name_stats["frequency"][:20],
+                "frequency": name_frequency[:20],
                 "counts": name_stats["counts"],
+            },
+            "toponyms": {
+                "frequency": toponym_frequency[:20],
+                "counts": {"toponym": name_stats["counts"].get("toponym", 0)},
             },
         },
         safe=False,
+    )
+
+
+@require_POST
+def annotate_article_selection(request: HttpRequest, article_id: int) -> JsonResponse:
+    """Apply or toggle male/female/toponym annotation for a plain-text selection."""
+
+    if not request.user.is_staff:
+        return JsonResponse({"error": "Forbidden"}, status=403)
+
+    try:
+        payload = json.loads(request.body.decode("utf-8") or "{}")
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON payload"}, status=400)
+
+    kind = payload.get("kind")
+    if kind not in {"male", "female", "toponym"}:
+        return JsonResponse({"error": "Invalid annotation kind"}, status=400)
+
+    selected_text = (payload.get("selected_text") or "").strip()
+
+    start = payload.get("start")
+    end = payload.get("end")
+    try:
+        start_int = int(start) if start is not None else None
+        end_int = int(end) if end is not None else None
+    except (TypeError, ValueError):
+        return JsonResponse({"error": "Invalid selection indices"}, status=400)
+
+    if not selected_text and (start_int is None or end_int is None):
+        return JsonResponse({"error": "No valid selection provided"}, status=400)
+
+    try:
+        article = Article.objects.get(id=article_id)
+    except Article.DoesNotExist:
+        return JsonResponse({"error": "Article not found"}, status=404)
+
+    resolved_span = resolve_inline_annotation_span(
+        article.content or "", selected_text, start_int, end_int
+    )
+
+    if resolved_span is None:
+        if start_int is None or end_int is None:
+            return JsonResponse({"error": "Could not resolve selected text"}, status=400)
+        changed = article.apply_annotation(start_int, end_int, kind)
+    else:
+        changed = article.apply_annotation(resolved_span[0], resolved_span[1], kind)
+
+    name_stats = Article.objects.annotated_name_stats(
+        Article.objects.filter(id=article_id), include_toponyms=True
+    )
+
+    return JsonResponse(
+        {
+            "changed": changed,
+            "content": article.content,
+            "name_stats": name_stats,
+        }
     )
 
 

@@ -17,7 +17,229 @@ from main_app.utils import frequency_stats, search_word
 
 _MALE_NAME_ANNOTATION_RE = re.compile(r"\[(?P<name>[^\[\]]+?)\]")
 _FEMALE_NAME_ANNOTATION_RE = re.compile(r"\^\^(?P<name>.+?)\^\^", re.DOTALL)
+_TOPONYM_ANNOTATION_RE = re.compile(r"\$\$(?P<name>.+?)\$\$", re.DOTALL)
+_ANNOTATION_RE = re.compile(
+    r"\[(?P<male>[^\[\]]+?)\]|\^\^(?P<female>.+?)\^\^|\$\$(?P<toponym>.+?)\$\$",
+    re.DOTALL,
+)
+_ANNOTATION_MARKERS = {
+    "male": ("[", "]"),
+    "female": ("^^", "^^"),
+    "toponym": ("$$", "$$"),
+}
 _APOSTROPHE_VARIANTS = ("'", "’", "ʼ", "‘", "′", "`")
+
+
+def _build_plain_projection(text: str) -> tuple[str, list[dict], list[dict]]:
+    """Return plain text projection, annotation spans, and visible segment mapping."""
+
+    raw = text or ""
+    plain_parts: list[str] = []
+    annotations: list[dict] = []
+    segments: list[dict] = []
+    cursor = 0
+    plain_cursor = 0
+
+    for match in _ANNOTATION_RE.finditer(raw):
+        if match.start() > cursor:
+            segment = raw[cursor : match.start()]
+            plain_parts.append(segment)
+            seg_len = len(segment)
+            segments.append(
+                {
+                    "raw_start": cursor,
+                    "raw_end": match.start(),
+                    "plain_start": plain_cursor,
+                    "plain_end": plain_cursor + seg_len,
+                }
+            )
+            plain_cursor += seg_len
+
+        if match.group("male") is not None:
+            kind = "male"
+            opening_len = 1
+            closing_len = 1
+        elif match.group("female") is not None:
+            kind = "female"
+            opening_len = 2
+            closing_len = 2
+        else:
+            kind = "toponym"
+            opening_len = 2
+            closing_len = 2
+
+        inner_raw_start = match.start() + opening_len
+        inner_raw_end = match.end() - closing_len
+        inner_text = raw[inner_raw_start:inner_raw_end]
+        inner_len = len(inner_text)
+
+        plain_parts.append(inner_text)
+        segments.append(
+            {
+                "raw_start": inner_raw_start,
+                "raw_end": inner_raw_end,
+                "plain_start": plain_cursor,
+                "plain_end": plain_cursor + inner_len,
+            }
+        )
+
+        annotations.append(
+            {
+                "kind": kind,
+                "plain_start": plain_cursor,
+                "plain_end": plain_cursor + inner_len,
+                "open_raw_start": match.start(),
+                "open_raw_end": inner_raw_start,
+                "close_raw_start": inner_raw_end,
+                "close_raw_end": match.end(),
+            }
+        )
+        plain_cursor += inner_len
+        cursor = match.end()
+
+    if cursor < len(raw):
+        tail = raw[cursor:]
+        tail_len = len(tail)
+        plain_parts.append(tail)
+        segments.append(
+            {
+                "raw_start": cursor,
+                "raw_end": len(raw),
+                "plain_start": plain_cursor,
+                "plain_end": plain_cursor + tail_len,
+            }
+        )
+
+    return "".join(plain_parts), annotations, segments
+
+
+def _plain_to_raw_index(text: str, plain_index: int) -> int:
+    """Map an index from plain projected text to original raw text index."""
+
+    plain_text, _annotations, segments = _build_plain_projection(text)
+    idx = max(0, min(plain_index, len(plain_text)))
+
+    for segment in segments:
+        if segment["plain_start"] <= idx <= segment["plain_end"]:
+            return segment["raw_start"] + (idx - segment["plain_start"])
+
+    return len(text)
+
+
+def _ranges_intersect(start_a: int, end_a: int, start_b: int, end_b: int) -> bool:
+    return start_a < end_b and start_b < end_a
+
+
+def _remove_raw_spans(raw_text: str, spans: list[tuple[int, int]]) -> str:
+    text = raw_text
+    for start, end in sorted(spans, key=lambda s: s[0], reverse=True):
+        text = text[:start] + text[end:]
+    return text
+
+
+def apply_inline_annotation(
+    text: str, start: int, end: int, kind: str
+) -> tuple[str, bool]:
+    """Apply or toggle an annotation marker on a plain-text selection."""
+
+    if kind not in _ANNOTATION_MARKERS:
+        return text, False
+
+    plain_text, annotations, _segments = _build_plain_projection(text)
+    sel_start = max(0, min(start, end))
+    sel_end = min(len(plain_text), max(start, end))
+
+    if sel_start >= sel_end:
+        return text, False
+
+    if not plain_text[sel_start:sel_end].strip():
+        return text, False
+
+    overlaps = [
+        ann
+        for ann in annotations
+        if _ranges_intersect(
+            ann["plain_start"], ann["plain_end"], sel_start, sel_end
+        )
+    ]
+    exact_same_kind = any(
+        ann["kind"] == kind
+        and ann["plain_start"] == sel_start
+        and ann["plain_end"] == sel_end
+        for ann in overlaps
+    )
+
+    spans_to_remove: list[tuple[int, int]] = []
+    for ann in overlaps:
+        spans_to_remove.append((ann["open_raw_start"], ann["open_raw_end"]))
+        spans_to_remove.append((ann["close_raw_start"], ann["close_raw_end"]))
+
+    new_text = _remove_raw_spans(text, spans_to_remove)
+
+    # Toggle behavior: selecting an already matching annotation removes it.
+    if exact_same_kind:
+        return new_text, new_text != text
+
+    raw_start = _plain_to_raw_index(new_text, sel_start)
+    raw_end = _plain_to_raw_index(new_text, sel_end)
+    opening, closing = _ANNOTATION_MARKERS[kind]
+    annotated = (
+        new_text[:raw_start]
+        + opening
+        + new_text[raw_start:raw_end]
+        + closing
+        + new_text[raw_end:]
+    )
+    return annotated, annotated != text
+
+
+def resolve_inline_annotation_span(
+    text: str,
+    selected_text: str,
+    approx_start: int | None = None,
+    approx_end: int | None = None,
+) -> tuple[int, int] | None:
+    """Resolve a UI-selected snippet to a plain-text span in article content.
+
+    Matching is whitespace-tolerant to account for browser-rendered text normalization.
+    """
+
+    plain_text, _annotations, _segments = _build_plain_projection(text)
+    selected = (selected_text or "").strip()
+    if not selected:
+        return None
+
+    tokens = selected.split()
+    if not tokens:
+        return None
+
+    # Convert browser-normalized whitespace into a tolerant regex.
+    pattern = r"\s+".join(re.escape(token) for token in tokens)
+    matches = list(re.finditer(pattern, plain_text))
+
+    # Fallback to exact find if regex route fails.
+    if not matches:
+        idx = plain_text.find(selected)
+        if idx == -1:
+            return None
+        return idx, idx + len(selected)
+
+    if len(matches) == 1:
+        match = matches[0]
+        return match.start(), match.end()
+
+    target_start = None
+    if isinstance(approx_start, int):
+        target_start = approx_start
+    elif isinstance(approx_end, int):
+        target_start = approx_end
+
+    if target_start is not None:
+        best = min(matches, key=lambda m: abs(m.start() - target_start))
+        return best.start(), best.end()
+
+    first = matches[0]
+    return first.start(), first.end()
 
 
 def _normalize_apostrophes(value: str) -> str:
@@ -262,23 +484,35 @@ class ArticleManager(models.Manager["Article"]):
         return response
 
     def total_name_counts(self) -> dict[str, int]:
-        """Aggregate annotated male/female name counts across all articles."""
+        """Aggregate annotated male/female name and toponym counts across all articles."""
 
         male = 0
         female = 0
+        toponym = 0
         for article in self.all():
             counts = article.annotated_name_counts()
             male += counts.get("male", 0)
             female += counts.get("female", 0)
+            toponym += counts.get("toponym", 0)
 
-        return {"male": male, "female": female, "total": male + female}
+        return {
+            "male": male,
+            "female": female,
+            "toponym": toponym,
+            "total": male + female,
+            "total_with_toponym": male + female + toponym,
+        }
 
-    def annotated_name_stats(self, articles: QuerySet["Article"] | None = None) -> dict:
+    def annotated_name_stats(
+        self,
+        articles: QuerySet["Article"] | None = None,
+        include_toponyms: bool = False,
+    ) -> dict:
         """Aggregate annotated name counts and frequency for given articles (defaults to all)."""
 
         articles = articles if articles is not None else self.all()
 
-        counts = {"male": 0, "female": 0}
+        counts = {"male": 0, "female": 0, "toponym": 0}
         freq: dict[tuple[str, str], int] = {}
 
         for article in articles:
@@ -289,6 +523,10 @@ class ArticleManager(models.Manager["Article"]):
             for n in names["female"]:
                 counts["female"] += 1
                 freq[("female", n)] = freq.get(("female", n), 0) + 1
+            if include_toponyms:
+                for n in names["toponym"]:
+                    counts["toponym"] += 1
+                    freq[("toponym", n)] = freq.get(("toponym", n), 0) + 1
 
         frequency = [
             {"name": name, "gender": gender, "count": count}
@@ -297,6 +535,10 @@ class ArticleManager(models.Manager["Article"]):
         frequency.sort(key=lambda x: (-x["count"], x["name"]))
 
         counts["total"] = counts["male"] + counts["female"]
+        if include_toponyms:
+            counts["total_with_toponym"] = (
+                counts["male"] + counts["female"] + counts["toponym"]
+            )
 
         return {"counts": counts, "frequency": frequency}
 
@@ -363,10 +605,11 @@ class Article(models.Model):
         return self.content.lower().count(word.lower())
 
     def annotated_names(self) -> dict[str, list[str]]:
-        """Extract annotated names from article content.
+        """Extract annotated entities from article content.
 
         - Male names: `[Mr. Smith]` (square brackets)
         - Female names: `^^Olivera Anna^^` (double carets)
+        - Toponyms: `$$Tashkent$$` (double dollar signs)
 
         Returns raw occurrences (not de-duplicated).
         """
@@ -375,26 +618,44 @@ class Article(models.Model):
 
         male = [m.group("name").strip() for m in _MALE_NAME_ANNOTATION_RE.finditer(text)]
         female = [m.group("name").strip() for m in _FEMALE_NAME_ANNOTATION_RE.finditer(text)]
+        toponym = [m.group("name").strip() for m in _TOPONYM_ANNOTATION_RE.finditer(text)]
 
         male = [n for n in male if n]
         female = [n for n in female if n]
+        toponym = [n for n in toponym if n]
 
-        return {"male": male, "female": female}
+        return {"male": male, "female": female, "toponym": toponym}
 
     def annotated_name_counts(self) -> dict[str, int]:
-        """Return total counts of annotated male/female names."""
+        """Return total counts of annotated male/female names and toponyms."""
 
         names = self.annotated_names()
-        return {"male": len(names["male"]), "female": len(names["female"])}
+        return {
+            "male": len(names["male"]),
+            "female": len(names["female"]),
+            "toponym": len(names["toponym"]),
+        }
 
     def annotated_unique_name_counts(self) -> dict[str, int]:
-        """Return unique counts of annotated male/female names."""
+        """Return unique counts of annotated male/female names and toponyms."""
 
         names = self.annotated_names()
         return {
             "male": len(set(names["male"])),
             "female": len(set(names["female"])),
+            "toponym": len(set(names["toponym"])),
         }
+
+    def apply_annotation(self, start: int, end: int, kind: str) -> bool:
+        """Apply or toggle an inline annotation marker and persist article content."""
+
+        updated_content, changed = apply_inline_annotation(self.content or "", start, end, kind)
+        if not changed:
+            return False
+
+        self.content = updated_content
+        self.save(update_fields=["content"])
+        return True
 
     class Meta:
         ordering = ["-published_year", "newspaper"]

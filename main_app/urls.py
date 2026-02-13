@@ -7,11 +7,14 @@ register_converter(FourDigitYearConverter, "yyyy")
 urlpatterns = [
     path("", views.index, name="index"),
     path("placeholders/geo/<int:seed>.svg", views.geo_placeholder_svg, name="geo_placeholder_svg"),
-    path("search", views.search_new, name="search"),
-    path("search-new", views.search_new, name="search_new"),
-    path("search-old", views.search, name="search_old"),
+    path("search", views.search, name="search"),
     path("a", views.handle_csv_upload_view, name="a"),
     path("article/<int:article_id>", views.article_detail, name="article_detail"),
+    path(
+        "article/<int:article_id>/annotate",
+        views.annotate_article_selection,
+        name="article_annotate",
+    ),
     path("word_frequency_data", views.word_frequency_data, name="word_frequency_data"),
     path("article/<int:article_id>/frequency_data", views.article_frequency, name="article_frequency"),
     path("year/<yyyy:year>", views.year_archive, name="year_archive"),

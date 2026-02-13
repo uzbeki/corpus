@@ -1,7 +1,9 @@
 import nltk
 import string
-from django.db.models import Func, Count, QuerySet
-from nltk.tokenize import RegexpTokenizer
+import re
+from django.db.models import Func, QuerySet
+from django.utils.html import strip_tags
+from nltk.tokenize import word_tokenize
 from main_app.counter import WordCounter
 from main_app.types import Context, FrequencyStats, SearchResult, SearchResultItem
 
@@ -51,11 +53,33 @@ class RegexpReplace(Func):
     arity = 2  # The number of arguments the function takes
 
 
-from nltk.tokenize import word_tokenize
-from django.utils.html import strip_tags
-
-
 _APOSTROPHE_TRANSLATION = str.maketrans({"’": "'", "ʼ": "'", "‘": "'", "′": "'", "`": "'"})
+
+
+def _clean_context_marker_fragments(context: str) -> str:
+    """Repair or remove fragmented annotation markers in snippet contexts."""
+
+    cleaned = context or ""
+
+    # Reconstruct split double markers produced by tokenization (e.g. "$ $" -> "$$").
+    cleaned = re.sub(r"\$\s+\$", "$$", cleaned)
+    cleaned = re.sub(r"\^\s+\^", "^^", cleaned)
+
+    # If only one side of a double marker is present in the snippet, drop it.
+    if cleaned.count("$$") % 2 != 0:
+        cleaned = cleaned.replace("$$", "")
+    if cleaned.count("^^") % 2 != 0:
+        cleaned = cleaned.replace("^^", "")
+
+    # Remove unmatched square brackets from clipped snippets.
+    if cleaned.count("[") != cleaned.count("]"):
+        cleaned = cleaned.replace("[", "").replace("]", "")
+
+    # Remove leftover single marker chars (common in clipped/tokenized snippets).
+    cleaned = re.sub(r"(?<!\$)\$(?!\$)", "", cleaned)
+    cleaned = re.sub(r"(?<!\^)\^(?!\^)", "", cleaned)
+
+    return re.sub(r"\s{2,}", " ", cleaned).strip()
 
 
 def search_word(text: str, word: str, padding=5) -> SearchResultItem:
@@ -72,7 +96,7 @@ def search_word(text: str, word: str, padding=5) -> SearchResultItem:
             count += 1
             start = max(0, i - padding)
             end = min(len(tokens), i + padding + 1)
-            context = " ".join(tokens[start:end])
+            context = _clean_context_marker_fragments(" ".join(tokens[start:end]))
             # results['locations'].append((count, context, "exact" if exact_match else "partial"))
             results["locations"].append(
                 Context(

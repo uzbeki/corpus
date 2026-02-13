@@ -11,126 +11,269 @@
         <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Year overview</p>
         <h1 class="mt-2 text-3xl font-semibold text-slate-900">{{year}} statistics</h1>
         <p class="mt-2 text-sm text-slate-600">Compare English and Uzbek corpora across lexical frequency, annotated names, and lexical diversity.</p>
+        <div class="mt-5 inline-flex rounded-full border border-slate-300 bg-slate-50 p-1 text-sm" role="tablist" aria-label="Language switch">
+            <button id="lang-tab-english" type="button" class="rounded-full border border-transparent px-4 py-1.5 font-medium text-slate-700" data-lang-target="english" aria-selected="true">English</button>
+            <button id="lang-tab-uzbek" type="button" class="rounded-full border border-transparent px-4 py-1.5 font-medium text-slate-700" data-lang-target="uzbek" aria-selected="false">Uzbek</button>
+        </div>
     </div>
 
-    <div class="grid gap-6 lg:grid-cols-2">
-        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-soft">
-            <div class="flex items-center justify-between">
-                <h2 class="text-xl font-semibold text-slate-900">English</h2>
-                <a class="rounded-full border border-slate-300 px-3 py-1 text-sm text-slate-700 transition hover:border-brand-500 hover:text-brand-700" href="{% url 'year_archive_download' year=year language=1 %}">download CSV</a>
+    <div id="lang-panel-english" class="language-panel rounded-3xl border border-slate-200 bg-white p-6 shadow-soft" data-lang="english">
+        <div class="flex items-center justify-between">
+            <h2 class="text-xl font-semibold text-slate-900">English</h2>
+            <a class="rounded-full border border-slate-300 px-3 py-1 text-sm text-slate-700 transition hover:border-brand-500 hover:text-brand-700" href="{% url 'year_archive_download' year=year language=1 %}">download CSV</a>
+        </div>
+        <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-sky-50 to-sky-100 p-4 shadow-soft">
+                <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Articles</p>
+                <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ english_article_count|intcomma }}</h4>
             </div>
-            <div class="mt-4 grid gap-4 sm:grid-cols-2">
-                <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-sky-50 to-sky-100 p-4 shadow-soft">
-                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Articles</p>
-                    <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ english_article_count|intcomma }}</h4>
-                </div>
-                <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-emerald-50 to-emerald-100 p-4 shadow-soft">
-                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Total words</p>
-                    <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ total_english_words|intcomma }}</h4>
-                </div>
-                <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-indigo-50 to-indigo-100 p-4 shadow-soft">
-                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Unique words</p>
-                    <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ english_frequency|length|intcomma }}</h4>
-                </div>
-                <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-amber-50 to-amber-100 p-4 shadow-soft">
-                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Annotated names</p>
-                    <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ english_name_stats.counts.total|intcomma }}</h4>
-                </div>
-                <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-violet-50 to-violet-100 p-4 shadow-soft">
-                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">TTR</p>
-                    <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ english_text_stats.ttr|floatformat:3 }}</h4>
-                </div>
-                <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-rose-50 to-rose-100 p-4 shadow-soft">
-                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Hapax</p>
-                    <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ english_text_stats.hapax_count|intcomma }}</h4>
-                </div>
+            <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-emerald-50 to-emerald-100 p-4 shadow-soft">
+                <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Total words</p>
+                <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ total_english_words|intcomma }}</h4>
             </div>
-            <div class="mt-6 grid gap-6 lg:grid-cols-2">
-                <div>
-                    <h3 class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Word frequency</h3>
-                    <ol class="mt-3 space-y-2 text-sm text-slate-700">
-                        {% for freq in english_frequency %}
-                        <li class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-                            <a href="{% url 'search' %}?q={{freq.word}}&language=1&year={{year}}&match_type=1" title="click to search for {{freq.word}}" class="transition hover:text-brand-700">{{freq.word}}</a>
-                            <span class="text-slate-600">{{freq.count|intcomma}}</span>
-                        </li>
-                        {% endfor %}
-                    </ol>
-                </div>
-                <div>
-                    <h3 class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Annotated names</h3>
-                    <ol class="mt-3 space-y-2 text-sm text-slate-700">
-                        {% for item in english_name_stats.frequency %}
-                        <li class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-                            <a href="{% url 'search' %}?q={{ item.name }}&language=1&year={{year}}&match_type=1" title="click to search for {{ item.name }}" class="transition hover:text-brand-700">{{ item.name }}</a>
-                            <span class="text-slate-600">{{ item.gender }} · {{ item.count|intcomma }}</span>
-                        </li>
-                        {% empty %}
-                        <li class="rounded-xl border border-dashed border-slate-300 px-3 py-3 text-sm text-slate-500">No annotated names.</li>
-                        {% endfor %}
-                    </ol>
-                </div>
+            <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-indigo-50 to-indigo-100 p-4 shadow-soft">
+                <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Unique words</p>
+                <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ english_frequency|length|intcomma }}</h4>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-amber-50 to-amber-100 p-4 shadow-soft">
+                <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Annotated names</p>
+                <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ english_name_stats.counts.total|intcomma }}</h4>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-teal-50 to-teal-100 p-4 shadow-soft">
+                <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Toponyms</p>
+                <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ english_name_stats.counts.toponym|intcomma }}</h4>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-violet-50 to-violet-100 p-4 shadow-soft">
+                <p class="text-xs uppercase tracking-[0.3em] text-slate-500">TTR</p>
+                <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ english_text_stats.ttr|floatformat:3 }}</h4>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-rose-50 to-rose-100 p-4 shadow-soft">
+                <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Hapax</p>
+                <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ english_text_stats.hapax_count|intcomma }}</h4>
             </div>
         </div>
 
-        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-soft">
-            <div class="flex items-center justify-between">
-                <h2 class="text-xl font-semibold text-slate-900">Uzbek</h2>
-                <a class="rounded-full border border-slate-300 px-3 py-1 text-sm text-slate-700 transition hover:border-brand-500 hover:text-brand-700" href="{% url 'year_archive_download' year=year language=2 %}">download CSV</a>
+        <div class="mt-6 border-t border-slate-200 pt-6">
+            <div class="inline-flex rounded-full border border-slate-300 bg-slate-50 p-1 text-sm" role="tablist" aria-label="Dataset switch">
+                <button type="button" class="dataset-tab rounded-full border border-transparent px-4 py-1.5 font-medium text-slate-700" data-scope="english" data-dataset="words" aria-selected="true">Words</button>
+                <button type="button" class="dataset-tab rounded-full border border-transparent px-4 py-1.5 font-medium text-slate-700" data-scope="english" data-dataset="names" aria-selected="false">Names</button>
+                <button type="button" class="dataset-tab rounded-full border border-transparent px-4 py-1.5 font-medium text-slate-700" data-scope="english" data-dataset="toponyms" aria-selected="false">Toponyms</button>
             </div>
-            <div class="mt-4 grid gap-4 sm:grid-cols-2">
-                <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-sky-50 to-sky-100 p-4 shadow-soft">
-                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Articles</p>
-                    <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ uzbek_article_count|intcomma }}</h4>
-                </div>
-                <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-emerald-50 to-emerald-100 p-4 shadow-soft">
-                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Total words</p>
-                    <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ total_uzbek_words|intcomma }}</h4>
-                </div>
-                <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-indigo-50 to-indigo-100 p-4 shadow-soft">
-                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Unique words</p>
-                    <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ uzbek_frequency|length|intcomma }}</h4>
-                </div>
-                <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-amber-50 to-amber-100 p-4 shadow-soft">
-                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Annotated names</p>
-                    <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ uzbek_name_stats.counts.total|intcomma }}</h4>
-                </div>
-                <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-violet-50 to-violet-100 p-4 shadow-soft">
-                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">TTR</p>
-                    <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ uzbek_text_stats.ttr|floatformat:3 }}</h4>
-                </div>
-                <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-rose-50 to-rose-100 p-4 shadow-soft">
-                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Hapax</p>
-                    <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ uzbek_text_stats.hapax_count|intcomma }}</h4>
-                </div>
+
+            <div class="dataset-panel mt-4" data-scope="english" data-dataset="words">
+                <h3 class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Word frequency</h3>
+                <ol class="mt-3 space-y-2 text-sm text-slate-700" data-collapsible-list data-limit="15">
+                    {% for freq in english_frequency %}
+                    <li class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                        <a href="{% url 'search' %}?q={{freq.word}}&language=1&year={{year}}&match_type=1" title="click to search for {{freq.word}}" class="transition hover:text-brand-700">{{freq.word}}</a>
+                        <span class="text-slate-600">{{freq.count|intcomma}}</span>
+                    </li>
+                    {% endfor %}
+                </ol>
+                <button type="button" class="mt-3 hidden rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:border-brand-500 hover:text-brand-700" data-list-toggle>Show more</button>
             </div>
-            <div class="mt-6 grid gap-6 lg:grid-cols-2">
-                <div>
-                    <h3 class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Word frequency</h3>
-                    <ol class="mt-3 space-y-2 text-sm text-slate-700">
-                        {% for freq in uzbek_frequency %}
-                        <li class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-                            <a href="{% url 'search' %}?q={{freq.word}}&language=2&year={{year}}&match_type=1" title="click to search for {{freq.word}}" class="transition hover:text-brand-700">{{freq.word}}</a>
-                            <span class="text-slate-600">{{freq.count|intcomma}}</span>
-                        </li>
-                        {% endfor %}
-                    </ol>
-                </div>
-                <div>
-                    <h3 class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Annotated names</h3>
-                    <ol class="mt-3 space-y-2 text-sm text-slate-700">
-                        {% for item in uzbek_name_stats.frequency %}
-                        <li class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-                            <a href="{% url 'search' %}?q={{ item.name }}&language=2&year={{year}}&match_type=1" title="click to search for {{ item.name }}" class="transition hover:text-brand-700">{{ item.name }}</a>
-                            <span class="text-slate-600">{{ item.gender }} · {{ item.count|intcomma }}</span>
-                        </li>
-                        {% empty %}
-                        <li class="rounded-xl border border-dashed border-slate-300 px-3 py-3 text-sm text-slate-500">No annotated names.</li>
-                        {% endfor %}
-                    </ol>
-                </div>
+
+            <div class="dataset-panel mt-4 hidden" data-scope="english" data-dataset="names">
+                <h3 class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Annotated names</h3>
+                <ol class="mt-3 space-y-2 text-sm text-slate-700" data-collapsible-list data-limit="15">
+                    {% for item in english_name_frequency %}
+                    <li class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                        <a href="{% url 'search' %}?q={{ item.name }}&language=1&year={{year}}&match_type=1" title="click to search for {{ item.name }}" class="transition hover:text-brand-700">{{ item.name }}</a>
+                        <span class="text-slate-600">{{ item.gender }} · {{ item.count|intcomma }}</span>
+                    </li>
+                    {% empty %}
+                    <li class="rounded-xl border border-dashed border-slate-300 px-3 py-3 text-sm text-slate-500">No annotated names.</li>
+                    {% endfor %}
+                </ol>
+                <button type="button" class="mt-3 hidden rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:border-brand-500 hover:text-brand-700" data-list-toggle>Show more</button>
+            </div>
+
+            <div class="dataset-panel mt-4 hidden" data-scope="english" data-dataset="toponyms">
+                <h3 class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Toponyms</h3>
+                <ol class="mt-3 space-y-2 text-sm text-slate-700" data-collapsible-list data-limit="15">
+                    {% for item in english_toponym_frequency %}
+                    <li class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                        <a href="{% url 'search' %}?q={{ item.name }}&language=1&year={{year}}&match_type=1" title="click to search for {{ item.name }}" class="transition hover:text-brand-700">{{ item.name }}</a>
+                        <span class="text-slate-600">{{ item.count|intcomma }}</span>
+                    </li>
+                    {% empty %}
+                    <li class="rounded-xl border border-dashed border-slate-300 px-3 py-3 text-sm text-slate-500">No toponyms.</li>
+                    {% endfor %}
+                </ol>
+                <button type="button" class="mt-3 hidden rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:border-brand-500 hover:text-brand-700" data-list-toggle>Show more</button>
             </div>
         </div>
     </div>
+
+    <div id="lang-panel-uzbek" class="language-panel hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-soft" data-lang="uzbek">
+        <div class="flex items-center justify-between">
+            <h2 class="text-xl font-semibold text-slate-900">Uzbek</h2>
+            <a class="rounded-full border border-slate-300 px-3 py-1 text-sm text-slate-700 transition hover:border-brand-500 hover:text-brand-700" href="{% url 'year_archive_download' year=year language=2 %}">download CSV</a>
+        </div>
+        <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-sky-50 to-sky-100 p-4 shadow-soft">
+                <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Articles</p>
+                <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ uzbek_article_count|intcomma }}</h4>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-emerald-50 to-emerald-100 p-4 shadow-soft">
+                <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Total words</p>
+                <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ total_uzbek_words|intcomma }}</h4>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-indigo-50 to-indigo-100 p-4 shadow-soft">
+                <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Unique words</p>
+                <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ uzbek_frequency|length|intcomma }}</h4>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-amber-50 to-amber-100 p-4 shadow-soft">
+                <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Annotated names</p>
+                <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ uzbek_name_stats.counts.total|intcomma }}</h4>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-teal-50 to-teal-100 p-4 shadow-soft">
+                <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Toponyms</p>
+                <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ uzbek_name_stats.counts.toponym|intcomma }}</h4>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-violet-50 to-violet-100 p-4 shadow-soft">
+                <p class="text-xs uppercase tracking-[0.3em] text-slate-500">TTR</p>
+                <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ uzbek_text_stats.ttr|floatformat:3 }}</h4>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-rose-50 to-rose-100 p-4 shadow-soft">
+                <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Hapax</p>
+                <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ uzbek_text_stats.hapax_count|intcomma }}</h4>
+            </div>
+        </div>
+
+        <div class="mt-6 border-t border-slate-200 pt-6">
+            <div class="inline-flex rounded-full border border-slate-300 bg-slate-50 p-1 text-sm" role="tablist" aria-label="Dataset switch">
+                <button type="button" class="dataset-tab rounded-full border border-transparent px-4 py-1.5 font-medium text-slate-700" data-scope="uzbek" data-dataset="words" aria-selected="true">Words</button>
+                <button type="button" class="dataset-tab rounded-full border border-transparent px-4 py-1.5 font-medium text-slate-700" data-scope="uzbek" data-dataset="names" aria-selected="false">Names</button>
+                <button type="button" class="dataset-tab rounded-full border border-transparent px-4 py-1.5 font-medium text-slate-700" data-scope="uzbek" data-dataset="toponyms" aria-selected="false">Toponyms</button>
+            </div>
+
+            <div class="dataset-panel mt-4" data-scope="uzbek" data-dataset="words">
+                <h3 class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Word frequency</h3>
+                <ol class="mt-3 space-y-2 text-sm text-slate-700" data-collapsible-list data-limit="15">
+                    {% for freq in uzbek_frequency %}
+                    <li class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                        <a href="{% url 'search' %}?q={{freq.word}}&language=2&year={{year}}&match_type=1" title="click to search for {{freq.word}}" class="transition hover:text-brand-700">{{freq.word}}</a>
+                        <span class="text-slate-600">{{freq.count|intcomma}}</span>
+                    </li>
+                    {% endfor %}
+                </ol>
+                <button type="button" class="mt-3 hidden rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:border-brand-500 hover:text-brand-700" data-list-toggle>Show more</button>
+            </div>
+
+            <div class="dataset-panel mt-4 hidden" data-scope="uzbek" data-dataset="names">
+                <h3 class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Annotated names</h3>
+                <ol class="mt-3 space-y-2 text-sm text-slate-700" data-collapsible-list data-limit="15">
+                    {% for item in uzbek_name_frequency %}
+                    <li class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                        <a href="{% url 'search' %}?q={{ item.name }}&language=2&year={{year}}&match_type=1" title="click to search for {{ item.name }}" class="transition hover:text-brand-700">{{ item.name }}</a>
+                        <span class="text-slate-600">{{ item.gender }} · {{ item.count|intcomma }}</span>
+                    </li>
+                    {% empty %}
+                    <li class="rounded-xl border border-dashed border-slate-300 px-3 py-3 text-sm text-slate-500">No annotated names.</li>
+                    {% endfor %}
+                </ol>
+                <button type="button" class="mt-3 hidden rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:border-brand-500 hover:text-brand-700" data-list-toggle>Show more</button>
+            </div>
+
+            <div class="dataset-panel mt-4 hidden" data-scope="uzbek" data-dataset="toponyms">
+                <h3 class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Toponyms</h3>
+                <ol class="mt-3 space-y-2 text-sm text-slate-700" data-collapsible-list data-limit="15">
+                    {% for item in uzbek_toponym_frequency %}
+                    <li class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                        <a href="{% url 'search' %}?q={{ item.name }}&language=2&year={{year}}&match_type=1" title="click to search for {{ item.name }}" class="transition hover:text-brand-700">{{ item.name }}</a>
+                        <span class="text-slate-600">{{ item.count|intcomma }}</span>
+                    </li>
+                    {% empty %}
+                    <li class="rounded-xl border border-dashed border-slate-300 px-3 py-3 text-sm text-slate-500">No toponyms.</li>
+                    {% endfor %}
+                </ol>
+                <button type="button" class="mt-3 hidden rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:border-brand-500 hover:text-brand-700" data-list-toggle>Show more</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        const languageButtons = document.querySelectorAll('[data-lang-target]');
+        const languagePanels = document.querySelectorAll('.language-panel');
+
+        function activateLanguage(language) {
+            languagePanels.forEach((panel) => {
+                panel.classList.toggle('hidden', panel.dataset.lang !== language);
+            });
+
+            languageButtons.forEach((btn) => {
+                const active = btn.dataset.langTarget === language;
+                btn.setAttribute('aria-selected', active ? 'true' : 'false');
+                btn.classList.toggle('bg-brand-600', active);
+                btn.classList.toggle('text-white', active);
+                btn.classList.toggle('border-brand-700', active);
+                btn.classList.toggle('shadow-soft', active);
+                btn.classList.toggle('ring-2', active);
+                btn.classList.toggle('ring-brand-200', active);
+
+                btn.classList.toggle('bg-transparent', !active);
+                btn.classList.toggle('text-slate-600', !active);
+                btn.classList.toggle('border-transparent', !active);
+            });
+        }
+
+        languageButtons.forEach((btn) => {
+            btn.addEventListener('click', () => activateLanguage(btn.dataset.langTarget));
+        });
+        activateLanguage('english');
+
+        const datasetButtons = document.querySelectorAll('.dataset-tab');
+        function activateDataset(scope, dataset) {
+            document.querySelectorAll(`.dataset-panel[data-scope="${scope}"]`).forEach((panel) => {
+                panel.classList.toggle('hidden', panel.dataset.dataset !== dataset);
+            });
+
+            document.querySelectorAll(`.dataset-tab[data-scope="${scope}"]`).forEach((btn) => {
+                const active = btn.dataset.dataset === dataset;
+                btn.setAttribute('aria-selected', active ? 'true' : 'false');
+                btn.classList.toggle('bg-brand-600', active);
+                btn.classList.toggle('text-white', active);
+                btn.classList.toggle('border-brand-700', active);
+                btn.classList.toggle('shadow-soft', active);
+                btn.classList.toggle('ring-2', active);
+                btn.classList.toggle('ring-brand-200', active);
+
+                btn.classList.toggle('bg-transparent', !active);
+                btn.classList.toggle('text-slate-600', !active);
+                btn.classList.toggle('border-transparent', !active);
+            });
+        }
+
+        datasetButtons.forEach((btn) => {
+            btn.addEventListener('click', () => activateDataset(btn.dataset.scope, btn.dataset.dataset));
+        });
+        activateDataset('english', 'words');
+        activateDataset('uzbek', 'words');
+
+        document.querySelectorAll('[data-collapsible-list]').forEach((listEl) => {
+            const limit = parseInt(listEl.dataset.limit || '15', 10);
+            const rows = Array.from(listEl.children);
+            const toggleBtn = listEl.parentElement.querySelector('[data-list-toggle]');
+            if (!toggleBtn || rows.length <= limit) return;
+
+            const setExpanded = (expanded) => {
+                rows.forEach((row, idx) => {
+                    row.classList.toggle('hidden', !expanded && idx >= limit);
+                });
+                toggleBtn.textContent = expanded ? 'Show less' : 'Show more';
+                toggleBtn.dataset.expanded = expanded ? '1' : '0';
+            };
+
+            toggleBtn.classList.remove('hidden');
+            setExpanded(false);
+
+            toggleBtn.addEventListener('click', () => {
+                setExpanded(toggleBtn.dataset.expanded !== '1');
+            });
+        });
+    })();
+    </script>
 </section>
 {% endblock main %}
