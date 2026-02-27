@@ -1,6 +1,0 @@
-Django
-psycopg2-binary
-python-dotenv
-django-allauth
-nltk # Natural Language Toolkit
-gunicorn # needed on the server to run the app

@@ -89,3 +89,58 @@ sudo nano /etc/systemd/system/corpus.service
 sudo systemctl status corpus.socket
 
 sudo systemctl enable corpus.socket
+
+# Version 2.0
+## Features:
+
+### Advanced Auth
+Users will be divided into admins/staff/regular users. 
+Stronger security:
+    - get rid of passwords and use fingerprint(FaceID, TouchID) login?
+    - require a valid email on signup.
+
+### Enable file uploads
+PDF, Image, Word file upload by staff or admin only? 
+Can ordinary users upload files?
+
+### Support for uploading large text content
+Staff/admin can register complete book/article contents in text format. 
+All text content should be indexed and easily searchable/analyzed upon.
+
+Rich text format necessary? Is plain text enough?
+
+### Amazon kindle like reader
+Most browsers already support reading PDF files. 
+Word file can be opened in Microsoft Word app. 
+Are special web readers for those files needed? 
+
+Why not only create web reader to read text content itself and let the user read the files on his own?
+
+### Specs and cost
+Max expected users would reach 10,000
+Peak load:around 100~200 concurrent users right after the launch. maybe lasts for a week
+Normal load: a few users at a time.
+
+Peak load time specs:
+    6 CPU cores
+    64 GB RAM
+    50GB of storage (corpus, annotations, database indexes)
+    20MB/s (160Mbps) network bandwidth: 200 users downloading 1MB/request every 10seconds. 1Gbps connection is enough
+
+    Assuming it lasts for a week,
+    $0.768 per hour server (AWS EC2 m5.4xlarge)
+    7 days * 24 hours = 168 hours
+    cost to run for a week: 168*0.768 = $129.02
+
+Normal load time specs:
+    2 CPU cores
+    4 GB RAM
+    50GB of storage
+    5MB/s network bandwidth
+
+    $0.0416 per hour server (AWS EC2 t3.medium)
+    Yearly Hours: 365 days - 7 peak days = 358 days × 24 hours = 8592 hours
+    Total Cost: 8592 × $0.0416 = $357.43 per year (~$30/month)
+
+    with load-balancing and static IP, domain name it will be around $45 a month ($540 a year on normal load).
+
