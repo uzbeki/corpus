@@ -15,6 +15,13 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv()
+
+
+def get_env_list(name: str) -> list[str]:
+    value = os.environ.get(name, "")
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -28,7 +35,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG") == "true"
 
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS").split(",")
+ALLOWED_HOSTS = get_env_list("ALLOWED_HOSTS")
 
 AUTHENTICATION_BACKENDS = [
     # Needed to login by username in Django admin, regardless of `allauth`
@@ -75,6 +82,16 @@ SITE_ID = 1
 # SOCIALACCOUNT_PROVIDERS = {"telegram": {"TOKEN": os.environ.get("TELEGRAM_TOKEN")}}
 
 ROOT_URLCONF = "uzAnalytica.urls"
+
+# Trust HTTPS information from nginx and allow allauth to derive the client IP
+# from deployment-specific proxy headers.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+ALLAUTH_TRUSTED_CLIENT_IP_HEADER = os.environ.get("ALLAUTH_TRUSTED_CLIENT_IP_HEADER")
+
+trusted_proxy_count = os.environ.get("ALLAUTH_TRUSTED_PROXY_COUNT")
+if trusted_proxy_count:
+    ALLAUTH_TRUSTED_PROXY_COUNT = int(trusted_proxy_count)
 
 TEMPLATES = [
     {
