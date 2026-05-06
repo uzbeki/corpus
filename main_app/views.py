@@ -2,8 +2,11 @@ import logging
 import math
 import random
 import json
+from collections import Counter
 
+from django.core.cache import cache
 from django.http import FileResponse, HttpRequest, HttpResponse, JsonResponse
+from django.db.models import Prefetch
 from django.shortcuts import render
 from django.views.decorators.http import require_POST
 
@@ -13,12 +16,13 @@ from main_app.models import (
     create_frequency_csv,
     resolve_inline_annotation_span,
 )
+from main_app.counter import cleanse_word
 from main_app.types import SearchResult
 from main_app.utils import (
+    CORPUS_DASHBOARD_CACHE_KEY,
+    CORPUS_DASHBOARD_CACHE_TIMEOUT,
     aggregate_word_stats,
-    article_stats,
     filter_by_match_type,
-    frequency_stats,
 )
 
 logger = logging.getLogger(__name__)
@@ -31,13 +35,31 @@ def index(request):
     """
     Index view for main page
     """
+    article_count = Article.objects.count()
+    featured_articles = Article.objects.only(
+        "id",
+        "title",
+        "author",
+        "content",
+        "language",
+        "published_year",
+        "link",
+        "newspaper_id",
+    ).order_by("-published_year", "id")[:3]
+
     context = {
-        "newspapers": Newspaper.objects.prefetch_related("article_set"),
-        "word_frequency": frequency_stats(Article.objects.all()),
-        "article_count": Article.objects.count(),
-        "word_count": Article.objects.count() * 500,
-        "text_stats": article_stats(Article.objects.all()),
-        "name_counts": Article.objects.total_name_counts(),
+        "newspapers": Newspaper.objects.only("id", "title", "link")
+        .prefetch_related(
+            Prefetch(
+                "article_set",
+                queryset=featured_articles,
+                to_attr="featured_articles",
+            )
+        )
+        .order_by("title"),
+        "newspaper_count": Newspaper.objects.count(),
+        "article_count": article_count,
+        "word_count": article_count * 500,
         "published_years": Article.objects.values("published_year")
         .distinct()
         .order_by("published_year")
@@ -45,6 +67,153 @@ def index(request):
         # "unique_word_count": Article.objects.unique_word_count(),
     }
     return render(request, "index.html", context)
+
+
+def _build_corpus_dashboard_payload() -> dict:
+    def make_bucket() -> dict:
+        return {
+            "word_freq": Counter(),
+            "total_words": 0,
+            "name_counts": {"male": 0, "female": 0, "toponym": 0},
+            "name_freq": Counter(),
+        }
+
+    languages = (int(Article.ENGLISH), int(Article.UZBEK))
+    buckets = {language: make_bucket() for language in languages}
+
+    for language, content in Article.objects.values_list(
+        "language", "content"
+    ).iterator(chunk_size=500):
+        bucket = buckets.get(language)
+        if bucket is None:
+            continue
+
+        for raw_word in (content or "").split():
+            word = cleanse_word(raw_word)
+            if not word:
+                continue
+            bucket["word_freq"][word] += 1
+            bucket["total_words"] += 1
+
+        names = Article(content=content or "").annotated_names()
+        for gender in ("male", "female", "toponym"):
+            for name in names[gender]:
+                bucket["name_counts"][gender] += 1
+                bucket["name_freq"][(gender, name)] += 1
+
+    def build_payload(bucket):
+        frequency = [
+            {"word": word, "count": count}
+            for word, count in bucket["word_freq"].items()
+        ]
+        frequency.sort(key=lambda x: (-x["count"], x["word"]))
+
+        name_counts = bucket["name_counts"]
+        name_counts["total"] = name_counts["male"] + name_counts["female"]
+        name_counts["total_with_toponym"] = name_counts["total"] + name_counts["toponym"]
+
+        name_frequency = [
+            {"name": name, "gender": gender, "count": count}
+            for (gender, name), count in bucket["name_freq"].items()
+            if gender in {"male", "female"}
+        ]
+        name_frequency.sort(key=lambda x: (-x["count"], x["name"]))
+
+        toponym_frequency = [
+            {"name": name, "gender": gender, "count": count}
+            for (gender, name), count in bucket["name_freq"].items()
+            if gender == "toponym"
+        ]
+        toponym_frequency.sort(key=lambda x: (-x["count"], x["name"]))
+
+        word_stats = {
+            "frequency": frequency,
+            "total_words": bucket["total_words"],
+            "unique_words": len(bucket["word_freq"]),
+            "ttr": (
+                len(bucket["word_freq"]) / bucket["total_words"]
+                if bucket["total_words"]
+                else 0
+            ),
+            "hapax_count": sum(
+                1 for count in bucket["word_freq"].values() if count == 1
+            ),
+        }
+
+        return {
+            "word_stats": word_stats,
+            "name_stats": {
+                "counts": name_counts,
+                "frequency": name_frequency + toponym_frequency,
+            },
+            "payload": {
+                "words": frequency[:20],
+                "names": {
+                    "frequency": name_frequency[:20],
+                    "counts": name_counts,
+                },
+                "toponyms": {
+                    "frequency": toponym_frequency[:20],
+                    "counts": {
+                        "toponym": name_counts.get("toponym", 0),
+                    },
+                },
+            },
+        }
+
+    english = build_payload(buckets[int(Article.ENGLISH)])
+    uzbek = build_payload(buckets[int(Article.UZBEK)])
+
+    combined_frequency = {}
+    for stats in (english["word_stats"], uzbek["word_stats"]):
+        for item in stats["frequency"]:
+            combined_frequency[item["word"]] = (
+                combined_frequency.get(item["word"], 0) + item["count"]
+            )
+
+    total_words = (
+        english["word_stats"]["total_words"] + uzbek["word_stats"]["total_words"]
+    )
+    unique_words = len(combined_frequency)
+    name_counts = {"male": 0, "female": 0, "toponym": 0}
+    for stats in (english["name_stats"], uzbek["name_stats"]):
+        counts = stats["counts"]
+        name_counts["male"] += counts.get("male", 0)
+        name_counts["female"] += counts.get("female", 0)
+        name_counts["toponym"] += counts.get("toponym", 0)
+
+    name_counts["total"] = name_counts["male"] + name_counts["female"]
+    name_counts["total_with_toponym"] = name_counts["total"] + name_counts["toponym"]
+
+    return {
+        "english": english["payload"],
+        "uzbek": uzbek["payload"],
+        "summary": {
+            "article_count": Article.objects.count(),
+            "word_count": total_words,
+            "name_counts": name_counts,
+            "text_stats": {
+                "total_words": total_words,
+                "unique_words": unique_words,
+                "ttr": (unique_words / total_words) if total_words else 0,
+                "hapax_count": sum(
+                    1 for count in combined_frequency.values() if count == 1
+                ),
+            },
+        },
+    }
+
+
+def _get_corpus_dashboard_payload() -> dict:
+    payload = cache.get(CORPUS_DASHBOARD_CACHE_KEY)
+    if payload is None:
+        payload = _build_corpus_dashboard_payload()
+        cache.set(
+            CORPUS_DASHBOARD_CACHE_KEY,
+            payload,
+            CORPUS_DASHBOARD_CACHE_TIMEOUT,
+        )
+    return payload
 
 
 def search(request: HttpRequest):
@@ -182,37 +351,7 @@ def word_frequency_data(request: HttpRequest) -> JsonResponse | HttpResponse:
 
     else:
 
-        def build_payload(language_code):
-            articles = Article.objects.filter(language=language_code)
-            word_stats = aggregate_word_stats(articles)
-            name_stats = Article.objects.annotated_name_stats(articles, include_toponyms=True)
-            name_frequency = [
-                item
-                for item in name_stats["frequency"]
-                if item["gender"] in {"male", "female"}
-            ]
-            toponym_frequency = [
-                item for item in name_stats["frequency"] if item["gender"] == "toponym"
-            ]
-            return {
-                "words": word_stats["frequency"][:20],
-                "names": {
-                    "frequency": name_frequency[:20],
-                    "counts": name_stats["counts"],
-                },
-                "toponyms": {
-                    "frequency": toponym_frequency[:20],
-                    "counts": {"toponym": name_stats["counts"].get("toponym", 0)},
-                },
-            }
-
-        return JsonResponse(
-            {
-                "english": build_payload(Article.ENGLISH),
-                "uzbek": build_payload(Article.UZBEK),
-            },
-            safe=False,
-        )
+        return JsonResponse(_get_corpus_dashboard_payload(), safe=False)
 
     # return JsonResponse(frequency_stats(Article.objects.all())[:20], safe=False)
 

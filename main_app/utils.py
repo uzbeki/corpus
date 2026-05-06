@@ -1,13 +1,39 @@
 import nltk
 import string
 import re
+from collections.abc import Iterable
+from django.core.cache import cache
 from django.db.models import Func, QuerySet
 from django.utils.html import strip_tags
 from nltk.tokenize import word_tokenize
 from main_app.counter import WordCounter
 from main_app.types import Context, FrequencyStats, SearchResult, SearchResultItem
 
-nltk.download("punkt")
+_PUNKT_READY = False
+
+
+def ensure_punkt() -> None:
+    """Load the tokenizer data only when tokenized search/stat helpers need it."""
+
+    global _PUNKT_READY
+    if _PUNKT_READY:
+        return
+
+    try:
+        nltk.data.find("tokenizers/punkt")
+    except LookupError:
+        nltk.download("punkt", quiet=True)
+    _PUNKT_READY = True
+
+
+CORPUS_DASHBOARD_CACHE_KEY = "main_app:corpus_dashboard:v2"
+CORPUS_DASHBOARD_CACHE_TIMEOUT = 60 * 60
+
+
+def clear_corpus_dashboard_cache() -> None:
+    """Clear cached corpus-wide dashboard data after article content changes."""
+
+    cache.delete(CORPUS_DASHBOARD_CACHE_KEY)
 
 
 def get_frequency_distribution(text: str, raw=False):
@@ -20,6 +46,7 @@ def get_frequency_distribution(text: str, raw=False):
         )
         return fd
     else:
+        ensure_punkt()
         words = nltk.word_tokenize(text)
 
         # Calculate the frequency distribution with words punctuation removed
@@ -39,7 +66,7 @@ def get_word_frequency(word: str, text: str):
 
 
 class RegexpReplace(Func):
-    """
+    r"""
 
     exaple RegexpReplace(
         'content',
@@ -86,6 +113,7 @@ def search_word(text: str, word: str, padding=5) -> SearchResultItem:
     # Normalize apostrophes so `xo'jalik` matches text with `xo’jalik`.
     word = (word or "").translate(_APOSTROPHE_TRANSLATION).lower()
     text = strip_tags(text or "").translate(_APOSTROPHE_TRANSLATION)  # remove HTML tags and normalize
+    ensure_punkt()
     tokens = word_tokenize(text)
     count = 0
     results = {"article": None, "frequency": 0, "locations": []}  # type: ignore
@@ -120,7 +148,14 @@ def search_word(text: str, word: str, padding=5) -> SearchResultItem:
 # FrequencyStats= list[FrequencyStat]
 
 
-def aggregate_word_stats(articles: QuerySet) -> dict:
+def _iter_contents(articles: QuerySet | Iterable) -> Iterable[str]:
+    if isinstance(articles, QuerySet):
+        return articles.values_list("content", flat=True).iterator(chunk_size=500)
+
+    return ((getattr(article, "content", article) or "") for article in articles)
+
+
+def aggregate_word_stats(articles: QuerySet | Iterable) -> dict:
     """Single pass word stats over a queryset.
 
     Returns:
@@ -133,7 +168,7 @@ def aggregate_word_stats(articles: QuerySet) -> dict:
         }
     """
 
-    wc = WordCounter([article.content for article in articles])
+    wc = WordCounter(_iter_contents(articles))
 
     frequency: FrequencyStats = [
         {"word": word, "count": count} for word, count in wc.word_freq.items()

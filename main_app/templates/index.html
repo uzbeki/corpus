@@ -10,7 +10,7 @@
             <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-sky-50 to-sky-100 p-4 shadow-soft">
                     <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Newspapers</p>
-                    <h4 class="stat-count mt-3 text-2xl font-semibold text-slate-900" data-count="{{ newspapers|length }}" data-format="int">{{ newspapers|length }}</h4>
+                    <h4 class="stat-count mt-3 text-2xl font-semibold text-slate-900" data-count="{{ newspaper_count }}" data-format="int">{{ newspaper_count }}</h4>
                 </div>
                 <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-emerald-50 to-emerald-100 p-4 shadow-soft">
                     <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Articles</p>
@@ -18,23 +18,23 @@
                 </div>
                 <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-indigo-50 to-indigo-100 p-4 shadow-soft">
                     <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Words (non-unique)</p>
-                    <h4 class="stat-count mt-3 text-2xl font-semibold text-slate-900" data-count="{{ word_count }}" data-format="int">{{ word_count|intcomma }}</h4>
+                    <h4 id="word-count" class="stat-count mt-3 text-2xl font-semibold text-slate-900" data-count="{{ word_count }}" data-format="int">{{ word_count|intcomma }}</h4>
                 </div>
                 <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-amber-50 to-amber-100 p-4 shadow-soft">
                     <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Annotated names</p>
-                    <h4 class="stat-count mt-3 text-2xl font-semibold text-slate-900" data-count="{{ name_counts.total }}" data-format="int">{{ name_counts.total|intcomma }}</h4>
+                    <h4 id="annotated-names-count" class="stat-count mt-3 text-2xl font-semibold text-slate-900" data-format="int">...</h4>
                 </div>
                 <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-teal-50 to-teal-100 p-4 shadow-soft">
                     <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Toponyms</p>
-                    <h4 class="stat-count mt-3 text-2xl font-semibold text-slate-900" data-count="{{ name_counts.toponym }}" data-format="int">{{ name_counts.toponym|intcomma }}</h4>
+                    <h4 id="toponym-count" class="stat-count mt-3 text-2xl font-semibold text-slate-900" data-format="int">...</h4>
                 </div>
                 <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-violet-50 to-violet-100 p-4 shadow-soft">
                     <p class="text-xs uppercase tracking-[0.3em] text-slate-500">TTR</p>
-                    <h4 class="stat-count mt-3 text-2xl font-semibold text-slate-900" data-count="{{ text_stats.ttr }}" data-format="float:3">{{ text_stats.ttr|floatformat:3 }}</h4>
+                    <h4 id="ttr-count" class="stat-count mt-3 text-2xl font-semibold text-slate-900" data-format="float:3">...</h4>
                 </div>
                 <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-rose-50 to-rose-100 p-4 shadow-soft">
                     <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Hapax</p>
-                    <h4 class="stat-count mt-3 text-2xl font-semibold text-slate-900" data-count="{{ text_stats.hapax_count }}" data-format="int">{{ text_stats.hapax_count|intcomma }}</h4>
+                    <h4 id="hapax-count" class="stat-count mt-3 text-2xl font-semibold text-slate-900" data-format="int">...</h4>
                 </div>
             </div>
         </div>
@@ -104,6 +104,32 @@
         let chartData;
         let currentLanguage = 'english';
         let currentMetric = 'words';
+
+        const formatNumber = (value, format) => {
+            if (format && format.startsWith('float:')) {
+                const decimals = parseInt(format.split(':')[1], 10) || 0;
+                return value.toFixed(decimals);
+            }
+            return Math.round(value).toLocaleString();
+        };
+
+        const setStatValue = (id, value, format = 'int') => {
+            const el = document.getElementById(id);
+            if (!el || value === undefined || value === null) return;
+            el.dataset.count = value;
+            el.dataset.format = format;
+            delete el.dataset.animated;
+            animateCounter(el);
+        };
+
+        const updateSummaryStats = (summary) => {
+            if (!summary) return;
+            setStatValue('word-count', summary.word_count);
+            setStatValue('annotated-names-count', summary.name_counts && summary.name_counts.total);
+            setStatValue('toponym-count', summary.name_counts && summary.name_counts.toponym);
+            setStatValue('ttr-count', summary.text_stats && summary.text_stats.ttr, 'float:3');
+            setStatValue('hapax-count', summary.text_stats && summary.text_stats.hapax_count);
+        };
 
         const tooltipCallback = (context) => {
             const value = context.parsed.y;
@@ -226,6 +252,7 @@
             .then(response => response.json())
             .then(data => {
                 chartData = data;
+                updateSummaryStats(data.summary);
                 const initialConfig = buildChartConfig(currentLanguage, currentMetric);
                 chart = new Chart(ctx, {
                     type: "bar",
@@ -275,22 +302,19 @@
         const statCounters = Array.from(document.querySelectorAll('.stat-count'));
         const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-        const formatNumber = (value, format) => {
-            if (format && format.startsWith('float:')) {
-                const decimals = parseInt(format.split(':')[1], 10) || 0;
-                return value.toFixed(decimals);
-            }
-            return Math.round(value).toLocaleString();
-        };
-
         const animateCounter = (el) => {
-            const raw = parseFloat(el.dataset.count || '0');
-            if (!Number.isFinite(raw)) return;
+            if (!el.dataset.count || el.dataset.animated === 'true') {
+                return false;
+            }
+
+            const raw = parseFloat(el.dataset.count);
+            if (!Number.isFinite(raw)) return false;
 
             const format = el.dataset.format || 'int';
+            el.dataset.animated = 'true';
             if (prefersReducedMotion) {
                 el.textContent = formatNumber(raw, format);
-                return;
+                return true;
             }
 
             const duration = 2000;
@@ -311,14 +335,16 @@
             };
 
             requestAnimationFrame(tick);
+            return true;
         };
 
         if ('IntersectionObserver' in window) {
             const observer = new IntersectionObserver((entries, obs) => {
                 entries.forEach(entry => {
                     if (!entry.isIntersecting) return;
-                    animateCounter(entry.target);
-                    obs.unobserve(entry.target);
+                    if (animateCounter(entry.target)) {
+                        obs.unobserve(entry.target);
+                    }
                 });
             }, { threshold: 0.4 });
 
@@ -345,7 +371,7 @@
                 {% endif %}
             </div>
             <div class="mt-6 grid gap-4 md:grid-cols-3">
-                {% for article in newspaper.article_set.random3 %}
+                {% for article in newspaper.featured_articles %}
                 <article class="flex h-full flex-col rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <div class="mb-4 overflow-hidden rounded-xl">
                         <img src="{% url 'geo_placeholder_svg' seed=article.pk %}" alt="{{ article.title }}" class="h-40 w-full object-cover">

@@ -6,13 +6,15 @@ from io import TextIOWrapper
 from django.core.files.uploadedfile import UploadedFile
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.db.models.signals import post_delete, post_save
 from django.db.models import Count
 from django.db.models.query import QuerySet
+from django.dispatch import receiver
 from django.http import HttpResponse
 from django.urls import reverse
 
 from main_app.types import SearchResult, SearchResultItem
-from main_app.utils import frequency_stats, search_word
+from main_app.utils import clear_corpus_dashboard_cache, frequency_stats, search_word
 
 
 _MALE_NAME_ANNOTATION_RE = re.compile(r"\[(?P<name>[^\[\]]+?)\]")
@@ -429,7 +431,9 @@ class ArticleManager(models.Manager["Article"]):
                 print(row)
                 print(e)
                 return []
-        return Article.objects.bulk_create(articles)
+        created = Article.objects.bulk_create(articles)
+        clear_corpus_dashboard_cache()
+        return created
 
     def to_csv(self) -> HttpResponse:
         """
@@ -515,7 +519,12 @@ class ArticleManager(models.Manager["Article"]):
         counts = {"male": 0, "female": 0, "toponym": 0}
         freq: dict[tuple[str, str], int] = {}
 
-        for article in articles:
+        if isinstance(articles, QuerySet):
+            article_iter = articles.only("content").iterator(chunk_size=500)
+        else:
+            article_iter = articles
+
+        for article in article_iter:
             names = article.annotated_names()
             for n in names["male"]:
                 counts["male"] += 1
@@ -659,6 +668,11 @@ class Article(models.Model):
 
     class Meta:
         ordering = ["-published_year", "newspaper"]
+
+
+@receiver([post_save, post_delete], sender=Article)
+def clear_article_dashboard_cache(**kwargs) -> None:
+    clear_corpus_dashboard_cache()
 
 
 def create_frequency_csv(articles: QuerySet[Article], filename="frequency.csv"):

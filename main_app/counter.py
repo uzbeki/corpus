@@ -1,6 +1,8 @@
 KEEP_TOP_WORDS = 10
 
 import re
+from collections import Counter
+from collections.abc import Iterable
 
 _APOSTROPHE_TRANSLATION = str.maketrans({
     "’": "'",  # U+2019 right single quotation mark
@@ -27,38 +29,30 @@ def cleanse_word(word:str):
 class WordCounter:
     """Word counting object, counts total words and top 10 occurring words"""
 
-    def __init__(self, list_of_contents: list[str]):
+    def __init__(self, list_of_contents: Iterable[str]):
         self.top_words = list()
         self.total_words = 0
-        self.list_of_contents = list_of_contents
         self.word_freq = dict()
-        self._count_words()
+        self._count_words(list_of_contents)
 
-    def _count_words(self):
-        for content in self.list_of_contents:
+    def _count_words(self, list_of_contents: Iterable[str]):
+        word_freq = Counter()
+
+        for content in list_of_contents:
             for word in content.split():
                 word = cleanse_word(word)
                 if not word:
                     continue
-                self.word_freq.setdefault(word, 0)
-                self.word_freq[word] += 1
                 self.total_words += 1
-                self._insert_to_top(word)
+                word_freq[word] += 1
 
-    def _insert_to_top(self, word):
-        if self.top_words:
-            for index, item in enumerate(self.top_words):
-                if self.word_freq[item] <= self.word_freq[word]:
-                    if word in self.top_words:
-                        del self.top_words[self.top_words.index(word)]
-                    self.top_words.insert(index, word)
-                    del self.top_words[KEEP_TOP_WORDS:]
-                    break
-                elif len(self.top_words) < KEEP_TOP_WORDS and word not in self.top_words:
-                    # Case where top 10 not full and word not in top 10 already
-                    self.top_words.append(word)
-        else:
-            self.top_words.append(word)
+        self.word_freq = dict(word_freq)
+        self.top_words = [
+            word
+            for word, _count in sorted(
+                word_freq.items(), key=lambda item: (-item[1], item[0])
+            )[:KEEP_TOP_WORDS]
+        ]
 
     def display_top_words(self):
         for word in self.top_words:
