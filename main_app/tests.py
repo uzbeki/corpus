@@ -1,9 +1,40 @@
+from unittest.mock import call, patch
+
 from django.core.cache import cache
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 
 from main_app.models import Article, Newspaper
 from main_app.counter import WordCounter
+from main_app import utils
 from main_app.utils import CORPUS_DASHBOARD_CACHE_KEY
+
+
+class PunktResourceTests(SimpleTestCase):
+    def tearDown(self):
+        utils._PUNKT_READY = False
+
+    @patch("main_app.utils.nltk.download")
+    @patch("main_app.utils.nltk.data.find")
+    def test_ensure_punkt_downloads_all_missing_resources(self, find, download):
+        utils._PUNKT_READY = False
+        find.side_effect = LookupError
+
+        utils.ensure_punkt()
+
+        self.assertEqual(
+            find.call_args_list,
+            [
+                call("tokenizers/punkt"),
+                call("tokenizers/punkt_tab/english"),
+            ],
+        )
+        self.assertEqual(
+            download.call_args_list,
+            [
+                call("punkt", quiet=True, raise_on_error=True),
+                call("punkt_tab", quiet=True, raise_on_error=True),
+            ],
+        )
 
 
 class ArticleAnnotationParsingTests(TestCase):

@@ -10,6 +10,10 @@ from main_app.counter import WordCounter
 from main_app.types import Context, FrequencyStats, SearchResult, SearchResultItem
 
 _PUNKT_READY = False
+_PUNKT_RESOURCES = (
+    ("tokenizers/punkt", "punkt"),
+    ("tokenizers/punkt_tab/english", "punkt_tab"),
+)
 
 
 def ensure_punkt() -> None:
@@ -19,10 +23,12 @@ def ensure_punkt() -> None:
     if _PUNKT_READY:
         return
 
-    try:
-        nltk.data.find("tokenizers/punkt")
-    except LookupError:
-        nltk.download("punkt", quiet=True)
+    for resource_path, package_name in _PUNKT_RESOURCES:
+        try:
+            nltk.data.find(resource_path)
+        except LookupError:
+            nltk.download(package_name, quiet=True, raise_on_error=True)
+
     _PUNKT_READY = True
 
 
