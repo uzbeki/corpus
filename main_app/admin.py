@@ -65,11 +65,11 @@ class ArticleAdmin(admin.ModelAdmin):
     def word_count(self, obj: Article):
         return len((obj.content or "").split())
 
-    @admin.display(description="Male names")
+    @admin.display(description="Male anthroponyms")
     def annotated_male_count(self, obj: Article):
         return obj.annotated_name_counts().get("male", 0)
 
-    @admin.display(description="Female names")
+    @admin.display(description="Female anthroponyms")
     def annotated_female_count(self, obj: Article):
         return obj.annotated_name_counts().get("female", 0)
 

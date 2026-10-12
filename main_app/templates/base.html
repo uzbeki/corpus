@@ -35,6 +35,40 @@
         a:hover, button:hover { transform: translateY(-1px); }
         a:active, button:active { transform: translateY(0); }
 
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+            gap: 1rem;
+        }
+        .stats-grid > div {
+            min-width: 0;
+        }
+        .stats-grid p {
+            letter-spacing: 0.15em;
+            overflow-wrap: anywhere;
+        }
+        .stats-grid h4 {
+            overflow-wrap: anywhere;
+        }
+        .dataset-controls {
+            flex-wrap: wrap;
+            min-width: 0;
+            max-width: 100%;
+            border-radius: 1.5rem;
+            row-gap: 0.5rem;
+        }
+        .dataset-controls label {
+            white-space: nowrap;
+        }
+        .dataset-controls input {
+            flex-shrink: 0;
+        }
+        .dataset-panel h3,
+        #download button {
+            max-width: 100%;
+            overflow-wrap: anywhere;
+        }
+
         .male-name {
             background: #dbeafe;
             color: #1d4ed8;
@@ -79,6 +113,6 @@
 {% block footer %}{% include "footer.html" %}
 {% endblock footer %}
 
-<script src="{% static 'js/gender_annotations.js' %}" defer></script>
+<script src="{% static 'js/gender_annotations.js' %}?v=anthroponyms-1" defer></script>
 </body>
 </html>

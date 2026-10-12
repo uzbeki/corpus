@@ -7,7 +7,7 @@
 {% block main %}
     <section class="space-y-10">
         <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-soft">
-            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div class="stats-grid">
                 <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-sky-50 to-sky-100 p-4 shadow-soft">
                     <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Newspapers</p>
                     <h4 class="stat-count mt-3 text-2xl font-semibold text-slate-900" data-count="{{ newspaper_count }}" data-format="int">{{ newspaper_count }}</h4>
@@ -21,7 +21,7 @@
                     <h4 id="word-count" class="stat-count mt-3 text-2xl font-semibold text-slate-900" data-count="{{ word_count }}" data-format="int">{{ word_count|intcomma }}</h4>
                 </div>
                 <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-amber-50 to-amber-100 p-4 shadow-soft">
-                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Annotated names</p>
+                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Annotated anthroponyms</p>
                     <h4 id="annotated-names-count" class="stat-count mt-3 text-2xl font-semibold text-slate-900" data-format="int">...</h4>
                 </div>
                 <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-teal-50 to-teal-100 p-4 shadow-soft">
@@ -38,15 +38,15 @@
                 </div>
             </div>
         </div>
-        <div class="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
-            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-soft">
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,0.7fr)]">
+            <div class="min-w-0 rounded-3xl border border-slate-200 bg-white p-6 shadow-soft">
                 <div class="flex flex-wrap items-center justify-between gap-4">
                     <div>
                         <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Insight</p>
                         <h2 class="mt-2 text-xl font-semibold text-slate-900">Top frequency overview</h2>
                     </div>
                     <div class="flex flex-wrap items-center gap-4">
-                        <div class="flex items-center gap-2 rounded-full border border-slate-300 bg-slate-50 px-3 py-2 text-sm">
+                        <div class="dataset-controls flex items-center gap-2 border border-slate-300 bg-slate-50 px-3 py-2 text-sm">
                             <span class="text-xs uppercase tracking-[0.2em] text-slate-500">Language</span>
                             <label class="flex items-center gap-1 text-slate-700">
                                 <input type="radio" id="english" name="language" value="english" checked class="accent-brand-500">
@@ -57,7 +57,7 @@
                                 Uzbek
                             </label>
                         </div>
-                        <div class="flex items-center gap-2 rounded-full border border-slate-300 bg-slate-50 px-3 py-2 text-sm">
+                        <div class="dataset-controls flex items-center gap-2 border border-slate-300 bg-slate-50 px-3 py-2 text-sm">
                             <span class="text-xs uppercase tracking-[0.2em] text-slate-500">Dataset</span>
                             <label class="flex items-center gap-1 text-slate-700">
                                 <input type="radio" id="dataset-words" name="dataset" value="words" checked class="accent-brand-500">
@@ -65,7 +65,7 @@
                             </label>
                             <label class="flex items-center gap-1 text-slate-700">
                                 <input type="radio" id="dataset-names" name="dataset" value="names" class="accent-brand-500">
-                                Names
+                                Anthroponyms
                             </label>
                             <label class="flex items-center gap-1 text-slate-700">
                                 <input type="radio" id="dataset-toponyms" name="dataset" value="toponyms" class="accent-brand-500">
@@ -77,7 +77,7 @@
                 <div class="mt-6">
                     <canvas id="word-frequency-chart" class="max-h-[420px]"></canvas>
                 </div>
-                <div id="download" class="mt-6 flex items-center justify-between">
+                <div id="download" class="mt-6 flex flex-wrap items-center justify-between gap-3">
                     <p class="text-sm text-slate-600">CSV export available for the selected dataset.</p>
                     <button type="button" class="rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-soft transition hover:bg-brand-500">download full dataset</button>
                 </div>
@@ -85,7 +85,7 @@
             <div class="rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-brand-50 to-brand-100 p-6 shadow-soft">
                 <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Explore</p>
                 <h3 class="mt-2 text-xl font-semibold text-slate-900">Browse by year</h3>
-                <p class="mt-2 text-sm text-slate-600">Jump into a specific year to explore article stats, lexical frequency, and annotated names.</p>
+                <p class="mt-2 text-sm text-slate-600">Jump into a specific year to explore article stats, lexical frequency, and annotated anthroponyms.</p>
                 <div class="mt-4 flex flex-wrap gap-2">
                     {% for year in published_years %}
                         <a href="{% url 'year_archive' year=year %}" class="rounded-full border border-slate-300 px-3 py-1 text-sm text-slate-700 transition hover:border-brand-500 hover:text-brand-700">{{ year }}</a>
@@ -187,7 +187,7 @@
                     labels,
                     datasets: [
                         {
-                            label: `Male names (total ${maleTotal})`,
+                            label: `Male anthroponyms (total ${maleTotal})`,
                             data: maleData,
                             backgroundColor: "rgba(75, 192, 192, 0.3)",
                             borderColor: "rgba(75, 192, 192, 1)",
@@ -195,7 +195,7 @@
                             totalCount: maleTotal,
                         },
                         {
-                            label: `Female names (total ${femaleTotal})`,
+                            label: `Female anthroponyms (total ${femaleTotal})`,
                             data: femaleData,
                             backgroundColor: "rgba(153, 102, 255, 0.3)",
                             borderColor: "rgba(153, 102, 255, 1)",
@@ -233,7 +233,7 @@
 
         const updateDownloadState = () => {
             const label = currentMetric === 'names'
-                ? 'download full annotated names'
+                ? 'download full annotated anthroponyms'
                 : (currentMetric === 'toponyms' ? 'download full toponyms' : 'download full word frequency');
             fullDownloadBtn.disabled = false;
             fullDownloadBtn.textContent = label;
@@ -288,7 +288,7 @@
                             a.style.display = 'none';
                             a.href = blobUrl;
                             const label = currentMetric === 'names'
-                                ? 'annotated_names'
+                                ? 'annotated_anthroponyms'
                                 : (currentMetric === 'toponyms' ? 'annotated_toponyms' : 'word_frequency');
                             a.download = `${label}_${currentLanguage}_${Date.now()}.csv`;
                             document.body.appendChild(a);

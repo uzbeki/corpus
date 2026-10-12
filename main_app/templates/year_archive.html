@@ -10,8 +10,8 @@
     <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-soft">
         <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Year overview</p>
         <h1 class="mt-2 text-3xl font-semibold text-slate-900">{{year}} statistics</h1>
-        <p class="mt-2 text-sm text-slate-600">Compare English and Uzbek corpora across lexical frequency, annotated names, and lexical diversity.</p>
-        <div class="mt-5 inline-flex rounded-full border border-slate-300 bg-slate-50 p-1 text-sm" role="tablist" aria-label="Language switch">
+        <p class="mt-2 text-sm text-slate-600">Compare English and Uzbek corpora across lexical frequency, annotated anthroponyms, and lexical diversity.</p>
+        <div class="mt-5 dataset-controls inline-flex border border-slate-300 bg-slate-50 p-1 text-sm" role="tablist" aria-label="Language switch">
             <button id="lang-tab-english" type="button" class="rounded-full border border-transparent px-4 py-1.5 font-medium text-slate-700" data-lang-target="english" aria-selected="true">English</button>
             <button id="lang-tab-uzbek" type="button" class="rounded-full border border-transparent px-4 py-1.5 font-medium text-slate-700" data-lang-target="uzbek" aria-selected="false">Uzbek</button>
         </div>
@@ -22,7 +22,7 @@
             <h2 class="text-xl font-semibold text-slate-900">English</h2>
             <a class="rounded-full border border-slate-300 px-3 py-1 text-sm text-slate-700 transition hover:border-brand-500 hover:text-brand-700" href="{% url 'year_archive_download' year=year language=1 %}">download CSV</a>
         </div>
-        <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="mt-4 stats-grid">
             <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-sky-50 to-sky-100 p-4 shadow-soft">
                 <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Articles</p>
                 <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ english_article_count|intcomma }}</h4>
@@ -36,7 +36,7 @@
                 <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ english_frequency|length|intcomma }}</h4>
             </div>
             <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-amber-50 to-amber-100 p-4 shadow-soft">
-                <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Annotated names</p>
+                <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Annotated anthroponyms</p>
                 <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ english_name_stats.counts.total|intcomma }}</h4>
             </div>
             <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-teal-50 to-teal-100 p-4 shadow-soft">
@@ -54,9 +54,9 @@
         </div>
 
         <div class="mt-6 border-t border-slate-200 pt-6">
-            <div class="inline-flex rounded-full border border-slate-300 bg-slate-50 p-1 text-sm" role="tablist" aria-label="Dataset switch">
+            <div class="dataset-controls inline-flex border border-slate-300 bg-slate-50 p-1 text-sm" role="tablist" aria-label="Dataset switch">
                 <button type="button" class="dataset-tab rounded-full border border-transparent px-4 py-1.5 font-medium text-slate-700" data-scope="english" data-dataset="words" aria-selected="true">Words</button>
-                <button type="button" class="dataset-tab rounded-full border border-transparent px-4 py-1.5 font-medium text-slate-700" data-scope="english" data-dataset="names" aria-selected="false">Names</button>
+                <button type="button" class="dataset-tab rounded-full border border-transparent px-4 py-1.5 font-medium text-slate-700" data-scope="english" data-dataset="names" aria-selected="false">Anthroponyms</button>
                 <button type="button" class="dataset-tab rounded-full border border-transparent px-4 py-1.5 font-medium text-slate-700" data-scope="english" data-dataset="toponyms" aria-selected="false">Toponyms</button>
             </div>
 
@@ -74,7 +74,7 @@
             </div>
 
             <div class="dataset-panel mt-4 hidden" data-scope="english" data-dataset="names">
-                <h3 class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Annotated names</h3>
+                <h3 class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Annotated anthroponyms</h3>
                 <ol class="mt-3 space-y-2 text-sm text-slate-700" data-collapsible-list data-limit="15">
                     {% for item in english_name_frequency %}
                     <li class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
@@ -82,7 +82,7 @@
                         <span class="text-slate-600">{{ item.gender }} · {{ item.count|intcomma }}</span>
                     </li>
                     {% empty %}
-                    <li class="rounded-xl border border-dashed border-slate-300 px-3 py-3 text-sm text-slate-500">No annotated names.</li>
+                    <li class="rounded-xl border border-dashed border-slate-300 px-3 py-3 text-sm text-slate-500">No annotated anthroponyms.</li>
                     {% endfor %}
                 </ol>
                 <button type="button" class="mt-3 hidden rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:border-brand-500 hover:text-brand-700" data-list-toggle>Show more</button>
@@ -110,7 +110,7 @@
             <h2 class="text-xl font-semibold text-slate-900">Uzbek</h2>
             <a class="rounded-full border border-slate-300 px-3 py-1 text-sm text-slate-700 transition hover:border-brand-500 hover:text-brand-700" href="{% url 'year_archive_download' year=year language=2 %}">download CSV</a>
         </div>
-        <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="mt-4 stats-grid">
             <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-sky-50 to-sky-100 p-4 shadow-soft">
                 <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Articles</p>
                 <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ uzbek_article_count|intcomma }}</h4>
@@ -124,7 +124,7 @@
                 <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ uzbek_frequency|length|intcomma }}</h4>
             </div>
             <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-amber-50 to-amber-100 p-4 shadow-soft">
-                <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Annotated names</p>
+                <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Annotated anthroponyms</p>
                 <h4 class="mt-3 text-2xl font-semibold text-slate-900">{{ uzbek_name_stats.counts.total|intcomma }}</h4>
             </div>
             <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-teal-50 to-teal-100 p-4 shadow-soft">
@@ -142,9 +142,9 @@
         </div>
 
         <div class="mt-6 border-t border-slate-200 pt-6">
-            <div class="inline-flex rounded-full border border-slate-300 bg-slate-50 p-1 text-sm" role="tablist" aria-label="Dataset switch">
+            <div class="dataset-controls inline-flex border border-slate-300 bg-slate-50 p-1 text-sm" role="tablist" aria-label="Dataset switch">
                 <button type="button" class="dataset-tab rounded-full border border-transparent px-4 py-1.5 font-medium text-slate-700" data-scope="uzbek" data-dataset="words" aria-selected="true">Words</button>
-                <button type="button" class="dataset-tab rounded-full border border-transparent px-4 py-1.5 font-medium text-slate-700" data-scope="uzbek" data-dataset="names" aria-selected="false">Names</button>
+                <button type="button" class="dataset-tab rounded-full border border-transparent px-4 py-1.5 font-medium text-slate-700" data-scope="uzbek" data-dataset="names" aria-selected="false">Anthroponyms</button>
                 <button type="button" class="dataset-tab rounded-full border border-transparent px-4 py-1.5 font-medium text-slate-700" data-scope="uzbek" data-dataset="toponyms" aria-selected="false">Toponyms</button>
             </div>
 
@@ -162,7 +162,7 @@
             </div>
 
             <div class="dataset-panel mt-4 hidden" data-scope="uzbek" data-dataset="names">
-                <h3 class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Annotated names</h3>
+                <h3 class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Annotated anthroponyms</h3>
                 <ol class="mt-3 space-y-2 text-sm text-slate-700" data-collapsible-list data-limit="15">
                     {% for item in uzbek_name_frequency %}
                     <li class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
@@ -170,7 +170,7 @@
                         <span class="text-slate-600">{{ item.gender }} · {{ item.count|intcomma }}</span>
                     </li>
                     {% empty %}
-                    <li class="rounded-xl border border-dashed border-slate-300 px-3 py-3 text-sm text-slate-500">No annotated names.</li>
+                    <li class="rounded-xl border border-dashed border-slate-300 px-3 py-3 text-sm text-slate-500">No annotated anthroponyms.</li>
                     {% endfor %}
                 </ol>
                 <button type="button" class="mt-3 hidden rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:border-brand-500 hover:text-brand-700" data-list-toggle>Show more</button>

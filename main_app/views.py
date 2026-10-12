@@ -313,7 +313,7 @@ def word_frequency_data(request: HttpRequest) -> JsonResponse | HttpResponse:
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
         writer = csv.writer(response)
-        writer.writerow(["name", "gender", "count"])
+        writer.writerow(["anthroponym", "gender", "count"])
         name_stats = Article.objects.annotated_name_stats(articles)
         for item in name_stats["frequency"]:
             writer.writerow([item["name"], item["gender"], item["count"]])
@@ -340,7 +340,7 @@ def word_frequency_data(request: HttpRequest) -> JsonResponse | HttpResponse:
         articles = Article.objects.filter(language=language_code)
 
         if dataset == "names":
-            filename = f"annotated_names_{language_label}.csv"
+            filename = f"annotated_anthroponyms_{language_label}.csv"
             return build_names_csv(articles, filename)
         if dataset == "toponyms":
             filename = f"annotated_toponyms_{language_label}.csv"

@@ -1,4 +1,4 @@
-/* Annotate gendered name markers in article content.
+/* Annotate gendered anthroponym markers in article content.
 
 Markers:
 - Male: [Mr. Smith]
@@ -59,7 +59,7 @@ This walks text nodes and replaces markers with <span> tags.
         if (name) {
           const span = document.createElement('span');
           span.className = 'male-name';
-          span.title = 'Annotated as male name ([...])';
+          span.title = 'Annotated as male anthroponym ([...])';
           span.textContent = name;
           fragment.appendChild(span);
           maleCount += 1;
@@ -70,7 +70,7 @@ This walks text nodes and replaces markers with <span> tags.
         if (name) {
           const span = document.createElement('span');
           span.className = 'female-name';
-          span.title = 'Annotated as female name (^^...^^)';
+          span.title = 'Annotated as female anthroponym (^^...^^)';
           span.textContent = name;
           fragment.appendChild(span);
           femaleCount += 1;
@@ -136,7 +136,7 @@ This walks text nodes and replaces markers with <span> tags.
       if (targetSelector) {
         const output = document.querySelector(targetSelector);
         if (output) {
-          output.textContent = `Male names: ${counts.maleCount} • Female names: ${counts.femaleCount} • Toponyms: ${counts.toponymCount}`;
+          output.textContent = `Male anthroponyms: ${counts.maleCount} • Female anthroponyms: ${counts.femaleCount} • Toponyms: ${counts.toponymCount}`;
         }
       }
 
