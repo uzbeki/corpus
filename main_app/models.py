@@ -7,20 +7,13 @@ from django.core.files.uploadedfile import UploadedFile
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models.signals import post_delete, post_save
-from django.db.models import Count, F, Func, Value
+from django.db.models import Count
 from django.db.models.query import QuerySet
 from django.dispatch import receiver
 from django.http import HttpResponse
 from django.urls import reverse
 
-from main_app.normalize import (
-    SEARCH_FOLD_FROM,
-    SEARCH_FOLD_TO,
-    NameTally,
-    name_key,
-    normalize_name,
-    search_fold,
-)
+from main_app.normalize import NameTally, name_key, normalize_name, search_regex
 from main_app.types import SearchResult, SearchResultItem
 from main_app.utils import (
     clear_corpus_dashboard_cache,
@@ -314,19 +307,10 @@ class ArticleQuerySet(QuerySet):
         if not words:
             return qs.none()
 
-        # Coarse prefilter: every query word must appear somewhere in the folded
-        # content. Exact token/phrase matching happens in Python (search_word).
-        qs = qs.annotate(
-            search_content=Func(
-                F("content"),
-                Value(SEARCH_FOLD_FROM),
-                Value(SEARCH_FOLD_TO),
-                function="TRANSLATE",
-                output_field=models.TextField(),
-            )
-        )
+        # Coarse prefilter: every query word must appear somewhere in the content.
+        # Exact token/phrase matching happens in Python (search_word).
         for word in words:
-            qs = qs.filter(search_content__icontains=search_fold(word))
+            qs = qs.filter(content__regex=search_regex(word))
         return qs
 
 

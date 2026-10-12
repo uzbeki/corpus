@@ -2,6 +2,7 @@ import nltk
 import string
 import re
 from collections.abc import Iterable
+from functools import lru_cache
 from django.core.cache import cache
 from django.db.models import Func, QuerySet
 from main_app.counter import WordCounter, cleanse_word
@@ -111,6 +112,7 @@ def _clean_context_marker_fragments(context: str) -> str:
     return re.sub(r"\s{2,}", " ", cleaned).strip()
 
 
+@lru_cache(maxsize=1 << 16)
 def _core(token: str) -> str:
     """Match key for a token: the same cleaning the word statistics use, so a word
     from a frequency chart finds exactly the occurrences it was counted from. Tokens
@@ -150,8 +152,12 @@ def _iter_matches(text: str, query: str):
     if not query_words or not tokens:
         return
     cores = [_core(token) for token in tokens]
+    first = query_words[0]
     i = 0
     while i < len(tokens):
+        if first not in cores[i]:  # cheap reject before comparing the whole window
+            i += 1
+            continue
         match_type = _match_type_at(cores, i, query_words)
         if match_type is None:
             i += 1

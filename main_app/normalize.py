@@ -36,13 +36,12 @@ CYRILLIC_HOMOGLYPHS = {
 }
 _HOMOGLYPH_TRANSLATION = str.maketrans(CYRILLIC_HOMOGLYPHS)
 
-# Case-symmetric fold used for the database prefilter (Postgres TRANSLATE). It is a
-# superset of the Python normalization, so anything search_word matches survives it.
-_SEARCH_FOLD = {ch: "'" for ch in APOSTROPHE_VARIANTS}
+# Raw characters that normalize to each normalized character, used to build the
+# database prefilter regex (see search_regex).
+_SEARCH_VARIANTS: dict[str, set[str]] = {"'": set(APOSTROPHE_VARIANTS)}
 for _cyr, _lat in CYRILLIC_HOMOGLYPHS.items():
-    _SEARCH_FOLD[_cyr.upper()] = _lat.upper()
-    _SEARCH_FOLD[_cyr.lower()] = _lat.lower()
-_SEARCH_FOLD_TRANSLATION = str.maketrans(_SEARCH_FOLD)
+    _SEARCH_VARIANTS.setdefault(_lat.lower(), set()).update({_cyr.lower(), _cyr.upper()})
+    _SEARCH_VARIANTS.setdefault(_lat.upper(), set()).update({_cyr.lower(), _cyr.upper()})
 
 INVISIBLE_CHARS = "\u00ad\u200b\u200c\u200d\u2060\ufeff"  # soft hyphen, zero-width chars, BOM
 _INVISIBLE_RE = re.compile(f"[{INVISIBLE_CHARS}]")
@@ -55,11 +54,6 @@ SENTENCE_END_RE = re.compile(r"[.!?…]['\"”»)]*$")
 # Punctuation glued to the next word ("qildi.Toshkent", "yetmay,nopoklik"). Digits on
 # the left are excluded so numbers like 3.5 or 1,200 stay whole.
 _GLUED_PUNCT_RE = re.compile(r"(?<=[^\d\W][.,;:!?/])(?=[^\W\d_]|[$\[\^(«“\"])")
-
-# Characters past the end of SEARCH_FOLD_TO are deleted by TRANSLATE. Hyphens are
-# dropped because word cleaning joins compounds (xotin-qizlar -> xotinqizlar).
-SEARCH_FOLD_FROM = "".join(_SEARCH_FOLD) + INVISIBLE_CHARS + "-\u2011"
-SEARCH_FOLD_TO = "".join(_SEARCH_FOLD.values())
 
 
 def normalize_apostrophes(value: str) -> str:
@@ -79,28 +73,41 @@ def fold_homoglyphs(token: str) -> str:
     return token
 
 
-def search_fold(value: str) -> str:
-    """Python equivalent of the database prefilter fold."""
+def search_regex(core: str) -> str:
+    """Postgres regex matching `core` in raw content, case-insensitively, with any
+    apostrophe variant or Cyrillic look-alike, and with hyphens or invisible characters
+    between letters (word cleaning joins compounds: xotin-qizlar -> xotinqizlar).
 
-    value = re.sub("[-\u2011]", "", _INVISIBLE_RE.sub("", value or ""))
-    return value.translate(_SEARCH_FOLD_TRANSLATION)
+    Used as a cheap superset prefilter before exact matching in Python.
+    """
+
+    parts = []
+    for ch in core:
+        if ch.isalnum() or ch == "'":
+            options = {ch, ch.upper(), ch.lower()}
+            options |= _SEARCH_VARIANTS.get(ch.lower(), set()) | _SEARCH_VARIANTS.get(ch.upper(), set())
+            parts.append("[" + "".join(sorted(options)) + "]")
+        else:
+            parts.append("\\" + ch)
+    return f"[-\u2011{INVISIBLE_CHARS}]*".join(parts)
 
 
 def split_tokens(text: str) -> list[str]:
     """Split text into word tokens on whitespace and on punctuation glued to the next word."""
 
-    tokens = []
-    for chunk in (text or "").split():
-        tokens.extend(part for part in _GLUED_PUNCT_RE.split(chunk) if part)
-    return tokens
+    return _GLUED_PUNCT_RE.sub(" ", text or "").split()
 
 
 def normalize_text(value: str) -> str:
     """Normalize apostrophes, invisible characters and mixed-script tokens."""
 
-    text = unicodedata.normalize("NFC", value or "")
+    text = value or ""
+    if not unicodedata.is_normalized("NFC", text):
+        text = unicodedata.normalize("NFC", text)
     text = _INVISIBLE_RE.sub("", text)
     text = normalize_apostrophes(text)
+    if not _CYRILLIC_RE.search(text):  # fast path: nothing to fold
+        return text
     return re.sub(r"\S+", lambda m: fold_homoglyphs(m.group(0)), text)
 
 
