@@ -220,9 +220,9 @@
             <h2 class="text-xl font-semibold text-slate-900">All articles</h2>
             <p class="text-sm text-slate-600">{{ article_count|intcomma }} total</p>
         </div>
-        <div class="mt-6 grid gap-4 md:grid-cols-2">
+        <div class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
             {% for article in newspaper.article_set.all %}
-            <article class="flex h-full flex-col rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <article class="flex h-full min-w-0 flex-col rounded-2xl border border-slate-200 bg-slate-50 p-4 [overflow-wrap:anywhere]">
                 <h3 class="text-lg font-semibold text-slate-900">
                     <a title="Go to full article page" href="{% url 'article_detail' article_id=article.pk %}" rel="noopener noreferrer" class="transition hover:text-brand-400">{{ article.title }}</a>
                 </h3>
