@@ -4,13 +4,7 @@ import re
 from collections import Counter
 from collections.abc import Iterable
 
-_APOSTROPHE_TRANSLATION = str.maketrans({
-    "’": "'",  # U+2019 right single quotation mark
-    "ʼ": "'",  # U+02BC modifier letter apostrophe
-    "‘": "'",  # U+2018 left single quotation mark
-    "′": "'",  # U+2032 prime
-    "`": "'",  # grave accent
-})
+from main_app.normalize import normalize_text, split_tokens
 
 def cleanse_word(word:str):
     """
@@ -18,7 +12,10 @@ def cleanse_word(word:str):
     :param word:
     :return:
     """
-    normalized = word.translate(_APOSTROPHE_TRANSLATION).lower()
+    if word.isascii():  # fast path: the only ASCII apostrophe variant is the backtick
+        normalized = word.replace("`", "'").lower()
+    else:
+        normalized = normalize_text(word).lower()
     # Keep alphanumerics and internal apostrophes; drop everything else.
     normalized = re.sub(r"[^0-9a-zA-Z']+", "", normalized)
     # Trim leading/trailing apostrophes introduced by stripping punctuation.
@@ -39,7 +36,7 @@ class WordCounter:
         word_freq = Counter()
 
         for content in list_of_contents:
-            for word in content.split():
+            for word in split_tokens(content):
                 word = cleanse_word(word)
                 if not word:
                     continue

@@ -4,9 +4,8 @@ import re
 from collections.abc import Iterable
 from django.core.cache import cache
 from django.db.models import Func, QuerySet
-from django.utils.html import strip_tags
-from nltk.tokenize import word_tokenize
-from main_app.counter import WordCounter
+from main_app.counter import WordCounter, cleanse_word
+from main_app.normalize import SENTENCE_END_RE, normalize_text, split_tokens, word_core
 from main_app.types import Context, FrequencyStats, SearchResult, SearchResultItem
 
 _PUNKT_READY = False
@@ -32,7 +31,7 @@ def ensure_punkt() -> None:
     _PUNKT_READY = True
 
 
-CORPUS_DASHBOARD_CACHE_KEY = "main_app:corpus_dashboard:v2"
+CORPUS_DASHBOARD_CACHE_KEY = "main_app:corpus_dashboard:v4"
 CORPUS_DASHBOARD_CACHE_TIMEOUT = 60 * 60
 
 
@@ -86,9 +85,6 @@ class RegexpReplace(Func):
     arity = 2  # The number of arguments the function takes
 
 
-_APOSTROPHE_TRANSLATION = str.maketrans({"’": "'", "ʼ": "'", "‘": "'", "′": "'", "`": "'"})
-
-
 def _clean_context_marker_fragments(context: str) -> str:
     """Repair or remove fragmented annotation markers in snippet contexts."""
 
@@ -115,35 +111,117 @@ def _clean_context_marker_fragments(context: str) -> str:
     return re.sub(r"\s{2,}", " ", cleaned).strip()
 
 
+def _core(token: str) -> str:
+    """Match key for a token: the same cleaning the word statistics use, so a word
+    from a frequency chart finds exactly the occurrences it was counted from. Tokens
+    with no Latin letters/digits (e.g. Cyrillic) fall back to a looser form."""
+
+    return cleanse_word(token) or word_core(token)
+
+
+def query_cores(query: str) -> list[str]:
+    return [core for core in (_core(t) for t in normalize_text(query).split()) if core]
+
+
+def _match_type_at(cores: list[str], i: int, query: list[str]) -> str | None:
+    """Return "exact"/"partial" if the query words match the tokens starting at i."""
+
+    window = cores[i : i + len(query)]
+    if len(window) < len(query) or not window[0]:
+        return None
+    if window == query:
+        return "exact"
+    if all(q in core for q, core in zip(query, window)):
+        return "partial"
+    return None
+
+
+def _iter_matches(text: str, query: str):
+    """Yield (tokens, cores, start, end, match_type) for each query match in text.
+
+    Tokens come from split_tokens (whitespace plus glued punctuation) so Uzbek
+    words such as ko'p stay intact and annotation markers ($$, ^^, [ ]) remain in
+    the context for highlighting.
+    """
+
+    query_words = query_cores(query)
+    # Content is plain text (templates escape it); "<" is often used as a quote mark.
+    tokens = split_tokens(normalize_text(text or ""))
+    if not query_words or not tokens:
+        return
+    cores = [_core(token) for token in tokens]
+    i = 0
+    while i < len(tokens):
+        match_type = _match_type_at(cores, i, query_words)
+        if match_type is None:
+            i += 1
+            continue
+        end = i + len(query_words)
+        yield tokens, cores, i, end, match_type
+        i = end
+
+
 def search_word(text: str, word: str, padding=5) -> SearchResultItem:
-    # Normalize apostrophes so `xo'jalik` matches text with `xo’jalik`.
-    word = (word or "").translate(_APOSTROPHE_TRANSLATION).lower()
-    text = strip_tags(text or "").translate(_APOSTROPHE_TRANSLATION)  # remove HTML tags and normalize
-    ensure_punkt()
-    tokens = word_tokenize(text)
+    """Find every occurrence of a word or phrase and return keyword-in-context snippets."""
+
     count = 0
     results = {"article": None, "frequency": 0, "locations": []}  # type: ignore
-    for i, token in enumerate(tokens):
-        exact_match = token.lower() == word
-        partial_match = word in token.lower()
-        if exact_match or partial_match:
-            count += 1
-            start = max(0, i - padding)
-            end = min(len(tokens), i + padding + 1)
-            context = _clean_context_marker_fragments(" ".join(tokens[start:end]))
-            # results['locations'].append((count, context, "exact" if exact_match else "partial"))
-            results["locations"].append(
-                Context(
-                    count=count,
-                    context=context,
-                    type="exact" if exact_match else "partial",
-                )
+    for tokens, _cores, start, end, match_type in _iter_matches(text, word):
+        count += 1
+        context = " ".join(tokens[max(0, start - padding) : end + padding])
+        results["locations"].append(
+            Context(
+                count=count,
+                context=_clean_context_marker_fragments(context),
+                type=match_type,
             )
+        )
     results["frequency"] = count
 
     # sort locations that exact matches come first
     results["locations"].sort(key=lambda x: x["type"], reverse=False)
     return results
+
+
+def find_ngrams(text: str, query: str, before: int, after: int, padding: int = 10) -> list[dict]:
+    """Return the query match plus up to `before`/`after` neighbouring words.
+
+    Neighbours never cross sentence boundaries, and punctuation-only tokens are
+    skipped. Each item: {"left", "keyword", "right" (lists of word cores),
+    "type", "context"}.
+    """
+
+    occurrences = []
+    for tokens, _cores, start, end, match_type in _iter_matches(text, query):
+        # Display forms keep hyphens (xotin-qizlar); punctuation-only tokens are skipped.
+        left: list[str] = []
+        j = start - 1
+        while j >= 0 and len(left) < before and not SENTENCE_END_RE.search(tokens[j]):
+            if word := word_core(tokens[j]):
+                left.insert(0, word)
+            j -= 1
+
+        right: list[str] = []
+        j = end
+        # The keyword itself may end the sentence ("... kitob.").
+        stop = bool(SENTENCE_END_RE.search(tokens[end - 1]))
+        while not stop and j < len(tokens) and len(right) < after:
+            if word := word_core(tokens[j]):
+                right.append(word)
+            stop = bool(SENTENCE_END_RE.search(tokens[j]))
+            j += 1
+
+        context = " ".join(tokens[max(0, start - padding) : end + padding])
+        occurrences.append(
+            {
+                "left": left,
+                "keyword": [word_core(token) for token in tokens[start:end]],
+                "right": right,
+                "type": match_type,
+                "context": _clean_context_marker_fragments(context),
+            }
+        )
+    return occurrences
 
 
 # class FrequencyStat(TypedDict):

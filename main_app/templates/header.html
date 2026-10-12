@@ -50,6 +50,27 @@
                         Year
                         <input type="text" name="year" id="year" placeholder="YYYY" pattern='[0-9]{4}' title='Only numbers are allowed.' value='{{request.GET.year}}' maxlength="4" class="h-10 rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30">
                     </label>
+                    {% with before=request.GET.before|default:"0" after=request.GET.after|default:"1" %}
+                    <label class="flex flex-col gap-2 text-xs uppercase tracking-[0.2em] text-slate-500">
+                        Mode
+                        <select name="mode" id="search-mode" class="h-10 rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30">
+                            <option value="concordance">Concordance (keyword in context)</option>
+                            <option value="ngram" {% if request.GET.mode == 'ngram' %}selected{% endif %}>N-grams (keyword + neighbours)</option>
+                        </select>
+                    </label>
+                    <label class="ngram-window flex flex-col gap-2 text-xs uppercase tracking-[0.2em] text-slate-500">
+                        Words before
+                        <select name="before" class="h-10 rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30">
+                            {% for n in "012345" %}<option value="{{ n }}" {% if n == before %}selected{% endif %}>{{ n }}</option>{% endfor %}
+                        </select>
+                    </label>
+                    <label class="ngram-window flex flex-col gap-2 text-xs uppercase tracking-[0.2em] text-slate-500">
+                        Words after
+                        <select name="after" class="h-10 rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30">
+                            {% for n in "012345" %}<option value="{{ n }}" {% if n == after %}selected{% endif %}>{{ n }}</option>{% endfor %}
+                        </select>
+                    </label>
+                    {% endwith %}
                     </div>
                 </div>
             </div>
@@ -61,6 +82,19 @@
     const filterToggle = document.getElementById('filterToggle');
     const filterPanel = document.getElementById('filterPanel');
     const filterChevron = document.getElementById('filterChevron');
+
+    const searchMode = document.getElementById('search-mode');
+    const syncWindowFields = () => {
+        const isNgram = searchMode && searchMode.value === 'ngram';
+        document.querySelectorAll('.ngram-window').forEach((label) => {
+            label.classList.toggle('hidden', !isNgram);
+            label.querySelectorAll('select').forEach((select) => { select.disabled = !isNgram; });
+        });
+    };
+    if (searchMode) {
+        searchMode.addEventListener('change', syncWindowFields);
+        syncWindowFields();
+    }
 
     if (filterToggle && filterPanel) {
         filterToggle.addEventListener('click', () => {

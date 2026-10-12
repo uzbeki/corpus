@@ -3,12 +3,42 @@
 {% block title %}Search | {{ query }}{% endblock title %}
 {% block extra_head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'js/chart_links.js' %}?v=1"></script>
 <style>
     .highlight {
         background-color: rgba(59, 130, 246, 0.18);
         color: inherit;
         padding: 0 0.15rem;
         border-radius: 0.25rem;
+    }
+    .mode-tab[aria-current="page"] {
+        background: #2563eb;
+        border-color: #1d4ed8;
+        color: #fff;
+    }
+    .ngram-row {
+        display: grid;
+        grid-template-columns: 2.5rem minmax(0, 1fr) auto minmax(0, 1fr) auto;
+        align-items: baseline;
+        column-gap: 0.5rem;
+    }
+    .ngram-left { text-align: right; }
+    .ngram-keyword {
+        font-weight: 600;
+        color: #1d4ed8;
+        background: rgba(59, 130, 246, 0.12);
+        border-radius: 0.25rem;
+        padding: 0 0.25rem;
+    }
+    .ngram-left, .ngram-right { overflow-wrap: anywhere; }
+    .ngram-item > summary::-webkit-details-marker { display: none; }
+    @media (max-width: 640px) {
+        .ngram-row { grid-template-columns: 2rem minmax(0, 1fr) auto; }
+        .ngram-text { display: block; }
+        .ngram-left { text-align: left; }
+    }
+    @media (min-width: 641px) {
+        .ngram-text { display: contents; }
     }
 </style>
 {% endblock extra_head %}
@@ -19,6 +49,41 @@
         <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Search</p>
         <h1 class="mt-2 text-3xl font-semibold text-slate-900">Search for "{{ query }}"</h1>
         <p class="mt-2 text-sm text-slate-600">Total frequency: {{ results.total_frequency|default:0|intcomma }}</p>
+
+        <div class="mt-5 flex flex-wrap items-center gap-3 border-t border-slate-200 pt-5">
+            <span class="text-xs uppercase tracking-[0.2em] text-slate-500">Mode</span>
+            <nav class="dataset-controls inline-flex gap-1 border border-slate-300 bg-slate-50 p-1 text-sm" aria-label="Search mode">
+                <a href="{{ mode_urls.concordance }}" class="mode-tab rounded-full border border-transparent px-4 py-1.5 font-medium text-slate-700" {% if mode == 'concordance' %}aria-current="page"{% endif %}>Concordance</a>
+                <a href="{{ mode_urls.ngram }}" class="mode-tab rounded-full border border-transparent px-4 py-1.5 font-medium text-slate-700" {% if mode == 'ngram' %}aria-current="page"{% endif %}>N-grams</a>
+            </nav>
+            {% if mode == 'ngram' %}
+            <form method="get" action="{% url 'search' %}" class="flex flex-wrap items-center gap-3 text-sm text-slate-700" id="ngram-window-form">
+                {% for key, value in request.GET.items %}
+                    {% if key != 'before' and key != 'after' and key != 'format' %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endif %}
+                {% endfor %}
+                <label class="flex items-center gap-2">
+                    Words before
+                    <select name="before" class="h-9 rounded-xl border border-slate-300 bg-white px-2 text-sm">
+                        {% for n in window_choices %}<option value="{{ n }}" {% if n == before %}selected{% endif %}>{{ n }}</option>{% endfor %}
+                    </select>
+                </label>
+                <label class="flex items-center gap-2">
+                    Words after
+                    <select name="after" class="h-9 rounded-xl border border-slate-300 bg-white px-2 text-sm">
+                        {% for n in window_choices %}<option value="{{ n }}" {% if n == after %}selected{% endif %}>{{ n }}</option>{% endfor %}
+                    </select>
+                </label>
+                <noscript><button type="submit" class="rounded-full border border-slate-300 px-3 py-1">Apply</button></noscript>
+            </form>
+            {% endif %}
+        </div>
+        <p class="mt-3 text-xs text-slate-500">
+            {% if mode == 'ngram' %}
+            Every occurrence of the keyword together with its neighbouring words (sentence boundaries are not crossed), grouped and ranked by frequency. Click a row to see example contexts.
+            {% else %}
+            Every occurrence of the keyword shown in its surrounding context, grouped by year.
+            {% endif %}
+        </p>
     </div>
 
     <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-soft">
@@ -34,6 +99,56 @@
         </div>
     </div>
 
+    {% if mode == 'ngram' %}
+    <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-soft">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h2 class="text-xl font-semibold text-slate-900">N-grams</h2>
+                <p class="mt-1 text-sm text-slate-600">{{ ngram_count|intcomma }} distinct · {{ results.total_frequency|intcomma }} occurrences · {{ before }} word{{ before|pluralize }} before, {{ after }} word{{ after|pluralize }} after</p>
+            </div>
+            {% if ngram_count %}
+            <a href="{{ csv_url }}" class="rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-soft transition hover:bg-brand-500">download CSV</a>
+            {% endif %}
+        </div>
+        {% if ngram_count > ngram_display_limit %}
+        <p class="mt-3 text-sm text-slate-500">Showing the top {{ ngram_display_limit|intcomma }}; the CSV contains all {{ ngram_count|intcomma }}.</p>
+        {% endif %}
+        {% if ngrams %}
+            <ol class="mt-6 space-y-2">
+                {% for g in ngrams %}
+                <li>
+                    <details class="ngram-item group rounded-xl border border-slate-200 bg-slate-50 transition open:bg-white">
+                        <summary class="ngram-row cursor-pointer list-none px-3 py-2 text-sm text-slate-800">
+                            <span class="text-xs text-slate-400">{{ forloop.counter }}</span>
+                            <span class="ngram-text">
+                                <span class="ngram-left">{{ g.left }}</span>
+                                <span class="ngram-keyword">{{ g.keyword }}</span>
+                                <span class="ngram-right">{{ g.right }}</span>
+                            </span>
+                            <span class="whitespace-nowrap text-right text-slate-600" title="{{ g.article_count }} article{{ g.article_count|pluralize }}">{{ g.count|intcomma }} <span class="text-xs text-slate-400">· {{ g.article_count|intcomma }} art.</span></span>
+                        </summary>
+                        <ul class="space-y-2 border-t border-slate-200 px-3 py-3">
+                            {% for ex in g.examples %}
+                            <li>
+                                <a class="flex flex-col gap-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 transition hover:border-brand-500/60" href="{% url 'article_detail' article_id=ex.article_id %}" target="_blank" rel="noopener">
+                                    <span class="text-xs uppercase tracking-[0.15em] text-slate-500">{{ ex.title }}{% if ex.year %} · {{ ex.year }}{% endif %}</span>
+                                    <span class="text-sm text-slate-700" data-highlight="{{ highlight_query }}" data-gender-annotations>{{ ex.context }}</span>
+                                </a>
+                            </li>
+                            {% endfor %}
+                            {% if g.count > g.examples|length %}
+                            <li class="text-xs text-slate-500">Showing {{ g.examples|length }} of {{ g.count|intcomma }} occurrences.</li>
+                            {% endif %}
+                        </ul>
+                    </details>
+                </li>
+                {% endfor %}
+            </ol>
+        {% else %}
+            <div class="mt-6 rounded-2xl border border-dashed border-slate-300 px-6 py-10 text-center text-slate-500">No results found.</div>
+        {% endif %}
+    </div>
+    {% else %}
     <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-soft">
         <div class="flex items-center justify-between">
             <h2 class="text-xl font-semibold text-slate-900">Results grouped by year</h2>
@@ -59,7 +174,7 @@
                                     <li>
                                         <a class="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 transition hover:border-brand-500/60" href="{% url 'article_detail' article_id=article.article_id %}" target="_blank" rel="noopener">
                                             <span class="text-xs uppercase tracking-[0.2em] text-slate-500">{{ match.type }}</span>
-                                            <span class="text-sm text-slate-700" data-highlight="{{ query }}" data-gender-annotations>{{ match.context }}</span>
+                                            <span class="text-sm text-slate-700" data-highlight="{{ highlight_query }}" data-gender-annotations>{{ match.context }}</span>
                                         </a>
                                     </li>
                                     {% endfor %}
@@ -75,6 +190,7 @@
             <div class="mt-6 rounded-2xl border border-dashed border-slate-300 px-6 py-10 text-center text-slate-500">No results found.</div>
         {% endif %}
     </div>
+    {% endif %}
 </section>
 
 {{ year_chart|json_script:"year-chart-data" }}
@@ -113,10 +229,19 @@
                             label: function(context) {
                                 const value = context.parsed.y;
                                 return `${context.label}: ${value}`;
-                            }
+                            },
+                            footer: () => 'Click to filter by this year.'
                         }
                     },
-                    legend: { display: false }
+                    legend: { display: false },
+                    labelLinks: {
+                        href: (index) => {
+                            const params = new URLSearchParams(window.location.search);
+                            params.set('year', labels[index]);
+                            params.delete('format');
+                            return `${window.location.pathname}?${params.toString()}`;
+                        },
+                    },
                 }
             }
         });
@@ -183,6 +308,13 @@
             }
 
             textNode.parentNode.replaceChild(fragment, textNode);
+        });
+    }
+
+    const windowForm = document.getElementById('ngram-window-form');
+    if (windowForm) {
+        windowForm.querySelectorAll('select').forEach((select) => {
+            select.addEventListener('change', () => windowForm.submit());
         });
     }
 

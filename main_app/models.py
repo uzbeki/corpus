@@ -7,14 +7,28 @@ from django.core.files.uploadedfile import UploadedFile
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models.signals import post_delete, post_save
-from django.db.models import Count
+from django.db.models import Count, F, Func, Value
 from django.db.models.query import QuerySet
 from django.dispatch import receiver
 from django.http import HttpResponse
 from django.urls import reverse
 
+from main_app.normalize import (
+    SEARCH_FOLD_FROM,
+    SEARCH_FOLD_TO,
+    NameTally,
+    name_key,
+    normalize_name,
+    search_fold,
+)
 from main_app.types import SearchResult, SearchResultItem
-from main_app.utils import clear_corpus_dashboard_cache, frequency_stats, search_word
+from main_app.utils import (
+    clear_corpus_dashboard_cache,
+    find_ngrams,
+    frequency_stats,
+    query_cores,
+    search_word,
+)
 
 
 _MALE_NAME_ANNOTATION_RE = re.compile(r"\[(?P<name>[^\[\]]+?)\]")
@@ -29,7 +43,6 @@ _ANNOTATION_MARKERS = {
     "female": ("^^", "^^"),
     "toponym": ("$$", "$$"),
 }
-_APOSTROPHE_VARIANTS = ("'", "’", "ʼ", "‘", "′", "`")
 
 
 def _build_plain_projection(text: str) -> tuple[str, list[dict], list[dict]]:
@@ -244,39 +257,6 @@ def resolve_inline_annotation_span(
     return first.start(), first.end()
 
 
-def _normalize_apostrophes(value: str) -> str:
-    """Normalize all apostrophe-like characters to a plain ASCII apostrophe."""
-
-    normalized = value
-    for ch in _APOSTROPHE_VARIANTS[1:]:  # skip the plain apostrophe at index 0
-        normalized = normalized.replace(ch, "'")
-    return normalized
-
-
-def _query_variants(query: str) -> set[str]:
-    """Return a set of query variants covering common apostrophe glyphs."""
-
-    if not query:
-        return set()
-
-    variants: set[str] = set()
-    # Start with normalized version
-    base = _normalize_apostrophes(query)
-    variants.add(base)
-    variants.add(query)
-
-    # Generate variants by swapping apostrophe glyphs
-    for src in _APOSTROPHE_VARIANTS:
-        if src not in query:
-            continue
-        for dst in _APOSTROPHE_VARIANTS:
-            if src == dst:
-                continue
-            variants.add(query.replace(src, dst))
-
-    return {v for v in variants if v}
-
-
 class Newspaper(models.Model):
     """
     DB model for storing newspaper info:
@@ -320,8 +300,7 @@ class ArticleQuerySet(QuerySet):
         Returns:
             List[SearchResultItem]: A list of SearchResultItem objects.
         """
-        query = (query or "").strip()
-        variants = _query_variants(query)
+        words = query_cores(query)
 
         qs = self.filter(language=language)
 
@@ -332,16 +311,23 @@ class ArticleQuerySet(QuerySet):
             except (TypeError, ValueError):
                 pass
 
-        if not variants:
+        if not words:
             return qs.none()
 
-        from django.db.models import Q
-
-        q_obj = Q()
-        for v in variants:
-            q_obj |= Q(content__icontains=v)
-
-        return qs.filter(q_obj)
+        # Coarse prefilter: every query word must appear somewhere in the folded
+        # content. Exact token/phrase matching happens in Python (search_word).
+        qs = qs.annotate(
+            search_content=Func(
+                F("content"),
+                Value(SEARCH_FOLD_FROM),
+                Value(SEARCH_FOLD_TO),
+                function="TRANSLATE",
+                output_field=models.TextField(),
+            )
+        )
+        for word in words:
+            qs = qs.filter(search_content__icontains=search_fold(word))
+        return qs
 
 
 class ArticleManager(models.Manager["Article"]):
@@ -380,7 +366,9 @@ class ArticleManager(models.Manager["Article"]):
         results = []
 
         for article in queryset:
-            search_result = search_word(article.content, _normalize_apostrophes(query), padding=10)
+            search_result = search_word(article.content, query, padding=10)
+            if not search_result["frequency"]:
+                continue
             results.append(
                 SearchResultItem(
                     article=article,
@@ -393,6 +381,79 @@ class ArticleManager(models.Manager["Article"]):
         return SearchResult(
             query=query, results=results, total_frequency=total_frequency
         )
+
+    def ngram_search(
+        self,
+        query: str,
+        language: int,
+        year: int | str | None = None,
+        before: int = 0,
+        after: int = 1,
+        match_type: int = 0,
+        examples_per_ngram: int = 20,
+    ) -> dict:
+        """Group every match of `query` with its neighbouring words into n-grams.
+
+        Returns {"query", "total_frequency", "ngrams", "year_totals"}; each n-gram
+        is {"left", "keyword", "right", "text", "count", "article_count",
+        "examples"} sorted by frequency. `match_type` follows the concordance
+        search: 0 both, 1 exact, 2 partial.
+        """
+
+        query = (query or "").strip()
+        empty = {"query": query, "total_frequency": 0, "ngrams": [], "year_totals": {}}
+        if not query:
+            return empty
+
+        allowed = {1: {"exact"}, 2: {"partial"}}.get(match_type, {"exact", "partial"})
+        groups: dict[tuple, dict] = {}
+        year_totals: dict[int, int] = {}
+        total = 0
+
+        queryset = self.get_queryset().search(query, language, year)
+        for article in queryset.only("id", "title", "content", "published_year"):
+            for occ in find_ngrams(article.content, query, before, after):
+                if occ["type"] not in allowed:
+                    continue
+                key = (tuple(occ["left"]), tuple(occ["keyword"]), tuple(occ["right"]))
+                group = groups.get(key)
+                if group is None:
+                    group = groups[key] = {
+                        "left": " ".join(occ["left"]),
+                        "keyword": " ".join(occ["keyword"]),
+                        "right": " ".join(occ["right"]),
+                        "text": " ".join(occ["left"] + occ["keyword"] + occ["right"]),
+                        "count": 0,
+                        "article_ids": set(),
+                        "examples": [],
+                    }
+                group["count"] += 1
+                group["article_ids"].add(article.id)
+                if len(group["examples"]) < examples_per_ngram:
+                    group["examples"].append(
+                        {
+                            "article_id": article.id,
+                            "title": article.title,
+                            "year": article.published_year,
+                            "context": occ["context"],
+                        }
+                    )
+                year_key = article.published_year or 0
+                year_totals[year_key] = year_totals.get(year_key, 0) + 1
+                total += 1
+
+        ngrams = []
+        for group in groups.values():
+            group["article_count"] = len(group.pop("article_ids"))
+            ngrams.append(group)
+        ngrams.sort(key=lambda g: (-g["count"], g["text"]))
+
+        return {
+            "query": query,
+            "total_frequency": total,
+            "ngrams": ngrams,
+            "year_totals": year_totals,
+        }
 
     def create_from_csv(self, csv_file: UploadedFile):
         """
@@ -516,8 +577,8 @@ class ArticleManager(models.Manager["Article"]):
 
         articles = articles if articles is not None else self.all()
 
-        counts = {"male": 0, "female": 0, "toponym": 0}
-        freq: dict[tuple[str, str], int] = {}
+        kinds = ("male", "female", "toponym") if include_toponyms else ("male", "female")
+        tally = NameTally()
 
         if isinstance(articles, QuerySet):
             article_iter = articles.only("content").iterator(chunk_size=500)
@@ -526,22 +587,14 @@ class ArticleManager(models.Manager["Article"]):
 
         for article in article_iter:
             names = article.annotated_names()
-            for n in names["male"]:
-                counts["male"] += 1
-                freq[("male", n)] = freq.get(("male", n), 0) + 1
-            for n in names["female"]:
-                counts["female"] += 1
-                freq[("female", n)] = freq.get(("female", n), 0) + 1
-            if include_toponyms:
-                for n in names["toponym"]:
-                    counts["toponym"] += 1
-                    freq[("toponym", n)] = freq.get(("toponym", n), 0) + 1
+            for kind in kinds:
+                for name in names[kind]:
+                    tally.add(kind, name)
 
-        frequency = [
-            {"name": name, "gender": gender, "count": count}
-            for (gender, name), count in freq.items()
-        ]
-        frequency.sort(key=lambda x: (-x["count"], x["name"]))
+        counts = {"male": 0, "female": 0, "toponym": 0}
+        for (kind, _key), count in tally.counts.items():
+            counts[kind] += count
+        frequency = tally.frequency()
 
         counts["total"] = counts["male"] + counts["female"]
         if include_toponyms:
@@ -613,14 +666,16 @@ class Article(models.Model):
         """
         return self.content.lower().count(word.lower())
 
-    def annotated_names(self) -> dict[str, list[str]]:
+    def annotated_names(self, *, normalize: bool = False) -> dict[str, list[str]]:
         """Extract annotated entities from article content.
 
         - Male names: `[Mr. Smith]` (square brackets)
         - Female names: `^^Olivera Anna^^` (double carets)
         - Toponyms: `$$Tashkent$$` (double dollar signs)
 
-        Returns raw occurrences (not de-duplicated).
+        Returns occurrences (not de-duplicated). With ``normalize=True`` names
+        get unified apostrophes, Latin look-alikes and whitespace; stored text is
+        never rewritten.
         """
 
         text = self.content or ""
@@ -633,7 +688,13 @@ class Article(models.Model):
         female = [n for n in female if n]
         toponym = [n for n in toponym if n]
 
-        return {"male": male, "female": female, "toponym": toponym}
+        names = {"male": male, "female": female, "toponym": toponym}
+        if normalize:
+            return {
+                kind: [normalize_name(name) for name in occurrences]
+                for kind, occurrences in names.items()
+            }
+        return names
 
     def annotated_name_counts(self) -> dict[str, int]:
         """Return total counts of annotated male/female names and toponyms."""
@@ -650,9 +711,8 @@ class Article(models.Model):
 
         names = self.annotated_names()
         return {
-            "male": len(set(names["male"])),
-            "female": len(set(names["female"])),
-            "toponym": len(set(names["toponym"])),
+            kind: len({name_key(name) for name in occurrences if name_key(name)})
+            for kind, occurrences in names.items()
         }
 
     def apply_annotation(self, start: int, end: int, kind: str) -> bool:
