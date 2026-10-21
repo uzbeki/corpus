@@ -326,6 +326,28 @@ class SearchModeTests(TestCase):
             content="Kitob o'qing, dedi \u041eʻzbekiston $$KPSS Markaziy Komiteti$$ a'zosi.",
         )
 
+    def test_search_defaults_to_uzbek(self):
+        for mode in ("concordance", "ngram"):
+            for language_params in ({}, {"language": ""}):
+                with self.subTest(mode=mode, language_params=language_params):
+                    response = self.client.get(
+                        "/search", {"q": "kitob", "mode": mode, **language_params}
+                    )
+                    self.assertEqual(response.status_code, 200)
+                    self.assertGreater(response.context["results"]["total_frequency"], 0)
+                    self.assertContains(response, '<option value="2" selected>Uzbek</option>', html=True)
+
+    def test_search_preserves_explicit_english_selection(self):
+        for mode in ("concordance", "ngram"):
+            with self.subTest(mode=mode):
+                response = self.client.get(
+                    "/search", {"q": "kitob", "mode": mode, "language": 1}
+                )
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.context["results"]["total_frequency"], 0)
+                self.assertContains(response, '<option value="1" selected>English</option>', html=True)
+                self.assertContains(response, '<option value="2">Uzbek</option>', html=True)
+
     def test_db_prefilter_handles_homoglyphs_and_phrases(self):
         results = Article.objects.search("O'zbekiston", Article.UZBEK)
         self.assertEqual([r["article"].title for r in results["results"]], ["Two"])

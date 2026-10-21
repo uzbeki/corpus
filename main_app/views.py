@@ -282,7 +282,7 @@ def search(request: HttpRequest):
     """Search view: concordance (keyword in context) or n-gram mode."""
 
     query = (request.GET.get("q") or "").strip()
-    language = int(request.GET.get("language") or Article.ENGLISH)
+    language = int(request.GET.get("language") or Article.UZBEK)
     year = request.GET.get("year") or None
     match_type = int(request.GET.get("match_type") or 0)
     mode = "ngram" if request.GET.get("mode") == "ngram" else "concordance"

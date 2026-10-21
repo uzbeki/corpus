@@ -35,7 +35,7 @@
                         Language
                         <select name="language" id="language" class="h-10 rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30">
                             <option value="1" {% if request.GET.language == '1' %} selected {% endif %}>English</option>
-                            <option value="2" {% if request.GET.language == '2' %} selected {% endif %}>Uzbek</option>
+                            <option value="2" {% if not request.GET.language or request.GET.language == '2' %} selected {% endif %}>Uzbek</option>
                         </select>
                     </label>
                     <label class="flex flex-col gap-2 text-xs uppercase tracking-[0.2em] text-slate-500">
